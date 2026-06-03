@@ -20,8 +20,9 @@ const { WebSocketServer } = require('ws');
  *   { type: "error",  message }
  */
 class TerminalSocket {
-  constructor(httpServer, manager) {
+  constructor(httpServer, manager, tunnel = null) {
     this.manager = manager;
+    this.tunnel = tunnel;
     this.wss     = new WebSocketServer({ server: httpServer, path: '/terminal' });
 
     // Set de clientes por serverId
@@ -29,6 +30,7 @@ class TerminalSocket {
     this._subs = new Map();
 
     this._setupManagerEvents();
+    this._setupTunnelEvents();
     this._setupWSS();
   }
 
@@ -52,6 +54,13 @@ class TerminalSocket {
     });
   }
 
+  _setupTunnelEvents() {
+    if (!this.tunnel) return;
+    this.tunnel.on('status', status => this._broadcastAll({ type: 'tunnel', ...status }));
+    this.tunnel.on('address', ({ address }) => this._broadcastAll({ type: 'tunnel_address', address }));
+    this.tunnel.on('claim', ({ url }) => this._broadcastAll({ type: 'tunnel_claim', url }));
+  }
+
   // ── Gerencia conexões WebSocket ────────────────────────────────
   _setupWSS() {
     this.wss.on('connection', (ws, req) => {
@@ -63,6 +72,10 @@ class TerminalSocket {
 
       ws.on('message', raw => {
         let msg;
+        if (raw.length > 4096) {
+          this._send(ws, { type: 'error', message: 'Mensagem muito grande' });
+          return;
+        }
         try {
           msg = JSON.parse(raw.toString());
         } catch {
@@ -142,14 +155,23 @@ class TerminalSocket {
     const data = JSON.stringify(payload);
     for (const ws of set) {
       if (ws.readyState === 1 /* OPEN */) {
-        ws.send(data);
+        try { ws.send(data); } catch {}
+      }
+    }
+  }
+
+  _broadcastAll(payload) {
+    const data = JSON.stringify(payload);
+    for (const client of this.wss.clients) {
+      if (client.readyState === 1) {
+        try { client.send(data); } catch {}
       }
     }
   }
 
   // ── Envia para um cliente específico ───────────────────────────
   _send(ws, payload) {
-    if (ws.readyState === 1) ws.send(JSON.stringify(payload));
+    if (ws.readyState === 1) { try { ws.send(JSON.stringify(payload)); } catch {} }
   }
 }
 

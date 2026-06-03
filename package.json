@@ -1,13 +1,21 @@
 {
   "name": "minebolso",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Seu servidor Minecraft no bolso — gerenciador local com tunnel playit.gg",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "check": "node --check src/index.js && node --check src/api/routes.js && node --check src/server/ServerManager.js && node --check src/server/ServerProcess.js && node --check src/server/ServerScanner.js && node --check src/tunnel/PlayitManager.js && node --check src/watchdog/Watchdog.js && node --check src/ws/TerminalSocket.js"
   },
-  "keywords": ["minecraft", "server", "manager", "playit", "android", "termux"],
+  "keywords": [
+    "minecraft",
+    "server",
+    "manager",
+    "playit",
+    "android",
+    "termux"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"

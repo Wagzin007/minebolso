@@ -9,6 +9,7 @@ const playit   = require('./tunnel/PlayitManager');
 const Watchdog = require('./watchdog/Watchdog');
 const TerminalSocket = require('./ws/TerminalSocket');
 const apiRoutes = require('./api/routes');
+const { log } = require('./utils/diagnostics');
 
 // ── Bootstrap ──────────────────────────────────────────────────────
 async function main() {
@@ -37,15 +38,16 @@ async function main() {
   });
 
   // ── WebSocket Terminal ──
-  new TerminalSocket(server, manager);
+  new TerminalSocket(server, manager, playit);
 
   // ── Watchdog ──
   const watchdog = new Watchdog(manager);
   watchdog.start();
 
   // ── playit.gg tunnel (se configurado) ──
-  if (cfg.autoTunnel) {
-    playit.on('log',     ({ line }) => console.log(line));
+  playit.on('log',     ({ line }) => console.log(line));
+  playit.on('status', status => log('info', 'Status playit atualizado', status));
+  if (cfg.autoTunnel && process.env.MINEBOLSO_NO_TUNNEL !== '1') {
     playit.on('address', ({ address }) => {
       console.log(`\n🔗  Tunnel ativo: ${address}\n`);
     });
@@ -62,9 +64,10 @@ async function main() {
   server.listen(PORT, '0.0.0.0', () => {
     const divider = '─'.repeat(52);
     console.log(`\n${divider}`);
-    console.log(`  ⬛  MineBolso v1.0.0`);
+    console.log(`  ⬛  MineBolso v2.0.0`);
     console.log(`${divider}`);
     console.log(`  🌐  http://localhost:${PORT}`);
+    log('info', 'MineBolso iniciado', { port: PORT, versionsDir: cfg.versionsDir });
     console.log(`  📂  Versões: ${cfg.versionsDir}`);
     console.log(`  📡  WebSocket: ws://localhost:${PORT}/terminal`);
     console.log(`${divider}\n`);
@@ -105,6 +108,8 @@ async function main() {
     setTimeout(() => process.exit(1), 8000);
   };
 
+  process.on('uncaughtException', error => log('error', 'Exceção não capturada', { error }));
+  process.on('unhandledRejection', error => log('error', 'Promise rejeitada sem tratamento', { error }));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT',  () => shutdown('SIGINT'));
 }
