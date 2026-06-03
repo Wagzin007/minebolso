@@ -5,6 +5,7 @@ const fs         = require('fs');
 const path       = require('path');
 const { EventEmitter } = require('events');
 const { readConfig }   = require('../config');
+const { userError }    = require('../utils/diagnostics');
 
 // Regex para extrair nível de log do Minecraft
 const LOG_LEVEL_RE = /\[(.*?)\/(INFO|WARN|ERROR|FATAL|DEBUG)\]/;
@@ -42,9 +43,17 @@ class ServerProcess extends EventEmitter {
     if (this.proc) throw new Error('Processo já está rodando');
 
     const config   = readConfig();
-    const javaPath = config.javaPath || 'java';
+    const javaPath = this.cfg.javaPath || config.javaPath || 'java';
     const ram      = this.cfg.ram || 1;          // GB
     const extraFlags = this.cfg.javaFlags || '';
+
+    if (!fs.existsSync(this.meta.jarPath)) {
+      throw userError('server.jar não encontrado.', {
+        statusCode: 404,
+        code: 'SERVER_JAR_NOT_FOUND',
+        suggestion: 'Coloque o arquivo server.jar na pasta do servidor e tente novamente.',
+      });
+    }
 
     // Aceita EULA automaticamente — grava arquivo se não existir
     this._ensureEula();
@@ -67,7 +76,7 @@ class ServerProcess extends EventEmitter {
       '-XX:SurvivorRatio=32',
       '-XX:+PerfDisableSharedMem',
       '-XX:MaxTenuringThreshold=1',
-      ...(extraFlags ? extraFlags.split(' ').filter(Boolean) : []),
+      ...(extraFlags ? extraFlags.split(/\s+/).filter(Boolean).slice(0, 40) : []),
       '-jar', this.meta.jarPath,
       '--nogui',
     ];
@@ -88,6 +97,8 @@ class ServerProcess extends EventEmitter {
     this.proc.stderr.on('data', d => this._handleData(d));
 
     this.proc.on('exit', (code, signal) => {
+      if (this._forceKillTimer) clearTimeout(this._forceKillTimer);
+      this._flushLogBuffer();
       this.proc  = null;
       this.pid   = null;
       this.ready = false;
@@ -96,14 +107,14 @@ class ServerProcess extends EventEmitter {
 
     this.proc.on('error', err => {
       this.emit('log', { line: `[MineBolso] Erro ao iniciar Java: ${err.message}`, level: 'ERROR' });
-      this.emit('exit', { code: null, signal: null });
+      this.emit('error', err);
     });
   }
 
   // ── Envia comando ao stdin do servidor ─────────────────────────
   sendCommand(cmd) {
     if (!this.proc?.stdin?.writable) return false;
-    this.proc.stdin.write(cmd.trim() + '\n');
+    this.proc.stdin.write(String(cmd).trim().replace(/[\r\n]/g, ' ') + '\n');
     return true;
   }
 
@@ -111,7 +122,7 @@ class ServerProcess extends EventEmitter {
   stop(forceAfterMs = 10_000) {
     if (!this.proc) return;
 
-    this.sendCommand('stop');
+    if (!this.sendCommand('stop')) this.proc.kill('SIGTERM');
 
     this._forceKillTimer = setTimeout(() => {
       if (this.proc) {
@@ -120,6 +131,7 @@ class ServerProcess extends EventEmitter {
       }
     }, forceAfterMs);
 
+    if (this._forceKillTimer.unref) this._forceKillTimer.unref();
     this.once('exit', () => clearTimeout(this._forceKillTimer));
   }
 
@@ -166,6 +178,12 @@ class ServerProcess extends EventEmitter {
       const leaveMatch = LEAVE_RE.exec(line);
       if (leaveMatch) this.emit('leave', { player: leaveMatch[1] });
     }
+  }
+
+  _flushLogBuffer() {
+    const line = this._logBuf.trim();
+    this._logBuf = '';
+    if (line) this.emit('log', { line, level: this._parseLevel(line) });
   }
 
   _parseLevel(line) {

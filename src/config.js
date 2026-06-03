@@ -22,6 +22,7 @@ const SERVERS_FILE  = path.join(DATA_DIR, 'servers.json');
 // ── Defaults ──────────────────────────────────────────────────────
 const DEFAULTS = {
   port:          25580,
+  defaultRam:    1,
   javaPath:      'java',          // espera estar no PATH
   baseDir:       BASE_DIR,
   versionsDir:   VERSIONS_DIR,
@@ -36,6 +37,8 @@ const DEFAULTS = {
     tpsAlertCycles:  3,
     ramThreshold:    90,        // % do alocado
     checkIntervalMs: 10_000,
+    crashWindowMs:   60_000,
+    maxRestarts:     3,
   },
 };
 
@@ -66,8 +69,8 @@ function readConfig() {
 function writeConfig(updates) {
   ensureDirs();
   const current = readConfig();
-  const next    = deepMerge(current, updates);
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(next, null, 2));
+  const next    = deepMerge(current, updates || {});
+  atomicWriteJson(CONFIG_FILE, next);
   return next;
 }
 
@@ -88,7 +91,7 @@ function readServers() {
 // ── Escreve lista de servidores ────────────────────────────────────
 function writeServers(servers) {
   ensureDirs();
-  fs.writeFileSync(SERVERS_FILE, JSON.stringify(servers, null, 2));
+  atomicWriteJson(SERVERS_FILE, Array.isArray(servers) ? servers : []);
 }
 
 // ── Util: deep merge simples ───────────────────────────────────────
@@ -101,12 +104,18 @@ function deepMerge(base, override) {
       !Array.isArray(override[key]) &&
       typeof base[key] === 'object'
     ) {
-      result[key] = deepMerge(base[key], override[key]);
+      result[key] = deepMerge(base[key] || {}, override[key]);
     } else {
       result[key] = override[key];
     }
   }
   return result;
+}
+
+function atomicWriteJson(file, value) {
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(value, null, 2), 'utf8');
+  fs.renameSync(tmp, file);
 }
 
 module.exports = {

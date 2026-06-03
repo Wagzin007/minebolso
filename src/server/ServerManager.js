@@ -4,187 +4,208 @@ const { EventEmitter } = require('events');
 const { readServers, writeServers, readConfig } = require('../config');
 const { scanVersions, getVersion } = require('./ServerScanner');
 const ServerProcess = require('./ServerProcess');
+const { userError, log } = require('../utils/diagnostics');
+const { assertServerId, normalizeRam, sanitizeCommand, sanitizeName } = require('../utils/validation');
 
-/**
- * ServerManager é o coração do MineBolso.
- * Mantém um Map de instâncias ServerProcess ativas e
- * sincroniza metadados com servers.json.
- *
- * Emite (para o WebSocket repassar):
- *   'log'    { serverId, line, level }
- *   'status' { serverId, ...statusObj }
- *   'alert'  { serverId, type, message }
- */
 class ServerManager extends EventEmitter {
   constructor() {
     super();
-    // serverId (string) → { process: ServerProcess, meta: obj, cfg: obj, state: obj }
     this._instances = new Map();
+    this._starting = new Set();
+    this._lastScanAt = 0;
+    this._lastScan = [];
   }
 
-  // ── Lista todos os servidores detectados + status ───────────────
   listAll() {
-    const versions  = scanVersions();       // do filesystem
-    const savedList = readServers();        // metadados salvos
-    const savedMap  = Object.fromEntries(savedList.map(s => [s.id, s]));
+    const now = Date.now();
+    if (now - this._lastScanAt > 1500) {
+      this._lastScan = scanVersions();
+      this._lastScanAt = now;
+    }
 
-    return versions.map(v => {
-      const saved    = savedMap[v.id] || {};
-      const instance = this._instances.get(v.id);
+    const savedList = readServers();
+    const savedMap = Object.fromEntries(savedList.map(s => [s.id, s]));
+
+    return this._lastScan.map(version => {
+      const saved = savedMap[version.id] || {};
+      const instance = this._instances.get(version.id);
+      const running = Boolean(instance?.proc.isRunning());
       return {
-        ...v,
-        // Config salva
-        name:       saved.name       || v.id,
-        ram:        saved.ram        || 1,
-        javaFlags:  saved.javaFlags  || '',
-        autoStart:  saved.autoStart  || false,
-        // Estado em tempo real
-        running:    instance ? instance.proc.isRunning() : false,
-        ready:      instance ? instance.proc.ready       : false,
-        pid:        instance ? instance.proc.pid         : null,
-        tps:        instance ? instance.state.tps        : null,
-        players:    instance ? instance.state.players    : [],
-        ramUsed:    instance ? instance.state.ramUsed    : 0,
-        uptime:     instance ? instance.state.startedAt
-          ? Math.floor((Date.now() - instance.state.startedAt) / 1000) : 0 : 0,
+        ...version,
+        name: sanitizeName(saved.name, version.id),
+        ram: normalizeRam(saved.ram, readConfig().defaultRam || 1),
+        javaFlags: saved.javaFlags || '',
+        autoStart: Boolean(saved.autoStart),
+        autoRestart: saved.autoRestart !== false,
+        lastStarted: saved.lastStarted || null,
+        lastExit: saved.lastExit || null,
+        running,
+        starting: this._starting.has(version.id) && !running,
+        ready: Boolean(instance?.proc.ready),
+        pid: running ? instance.proc.pid : null,
+        tps: instance?.state.tps || null,
+        players: instance ? [...instance.state.players] : [],
+        ramUsed: instance?.state.ramUsed || 0,
+        health: instance?.state.health || 'offline',
+        uptime: instance?.state.startedAt ? Math.floor((now - instance.state.startedAt) / 1000) : 0,
       };
     });
   }
 
-  // ── Retorna status de um servidor específico ───────────────────
   getStatus(id) {
+    id = assertServerId(id);
     return this.listAll().find(s => s.id === id) || null;
   }
 
-  // ── Inicia servidor ────────────────────────────────────────────
   start(id) {
-    if (this._instances.has(id)) {
-      const inst = this._instances.get(id);
-      if (inst.proc.isRunning()) throw new Error(`Servidor ${id} já está rodando`);
-      // Limpa instância morta
-      this._instances.delete(id);
+    id = assertServerId(id);
+    const existing = this._instances.get(id);
+    if (existing?.proc.isRunning()) {
+      throw userError(`Servidor ${id} já está rodando.`, { code: 'SERVER_ALREADY_RUNNING' });
     }
+    if (this._starting.has(id)) {
+      throw userError(`Servidor ${id} já está iniciando.`, { code: 'SERVER_STARTING' });
+    }
+    this._instances.delete(id);
 
     const meta = getVersion(id);
-    if (!meta) throw new Error(`Versão ${id} não encontrada em versions/`);
+    if (!meta) {
+      throw userError(`Versão ${id} não encontrada.`, {
+        statusCode: 404,
+        code: 'SERVER_VERSION_NOT_FOUND',
+        suggestion: 'Crie o servidor pelo assistente ou coloque server.jar na pasta da versão.',
+      });
+    }
 
     const saved = readServers().find(s => s.id === id) || {};
-    const cfg   = {
-      ram:       saved.ram       || readConfig().defaultRam || 1,
+    const appCfg = readConfig();
+    const cfg = {
+      ram: normalizeRam(saved.ram, appCfg.defaultRam || 1),
       javaFlags: saved.javaFlags || '',
+      javaPath: appCfg.javaPath || 'java',
     };
 
-    const proc  = new ServerProcess(meta, cfg);
+    const proc = new ServerProcess(meta, cfg);
     const state = {
       startedAt: null,
-      tps:       { tps1m: 20, tps5m: 20, tps15m: 20 },
-      players:   [],
-      ramUsed:   0,
+      tps: { tps1m: 20, tps5m: 20, tps15m: 20 },
+      players: [],
+      ramUsed: 0,
+      health: 'starting',
+      expectedStop: false,
+      crashCount: existing?.state.crashCount || 0,
     };
 
-    const instance = { proc, meta, cfg, state };
-    this._instances.set(id, instance);
+    this._starting.add(id);
+    this._instances.set(id, { proc, meta, cfg, state });
+    this._wireProcess(id, proc, state);
 
-    // ── Eventos do processo ──
-    proc.on('log', ({ line, level }) => {
-      this.emit('log', { serverId: id, line, level });
-    });
+    try {
+      proc.start();
+    } catch (error) {
+      this._starting.delete(id);
+      this._instances.delete(id);
+      throw error;
+    }
 
+    this.emit('log', { serverId: id, line: `[MineBolso] Iniciando ${id} com ${cfg.ram}GB de RAM...`, level: 'INFO' });
+    this.emit('status', { serverId: id, event: 'starting', ...this.getStatus(id) });
+    return { id, started: true };
+  }
+
+  stop(id) {
+    id = assertServerId(id);
+    const inst = this._instances.get(id);
+    if (!inst?.proc.isRunning()) {
+      throw userError(`Servidor ${id} não está rodando.`, { code: 'SERVER_NOT_RUNNING' });
+    }
+    inst.state.expectedStop = true;
+    inst.state.health = 'stopping';
+    inst.proc.stop();
+    this.emit('status', { serverId: id, event: 'stopping', ...this.getStatus(id) });
+    return { id, stopping: true };
+  }
+
+  restart(id) {
+    id = assertServerId(id);
+    const inst = this._instances.get(id);
+    if (inst?.proc.isRunning()) {
+      inst.proc.once('exit', () => setTimeout(() => {
+        try { this.start(id); } catch (error) { this.emit('alert', this._alert(id, 'restart_failed', error.message)); }
+      }, 1200));
+      inst.state.expectedStop = true;
+      inst.proc.stop();
+      return { id, restarting: true };
+    }
+    return this.start(id);
+  }
+
+  sendCommand(id, cmd) {
+    id = assertServerId(id);
+    cmd = sanitizeCommand(cmd);
+    const inst = this._instances.get(id);
+    if (!inst?.proc.isRunning()) throw userError(`Servidor ${id} não está rodando.`, { code: 'SERVER_NOT_RUNNING' });
+    if (!inst.proc.sendCommand(cmd)) throw userError('Console indisponível no momento.', { code: 'STDIN_UNAVAILABLE' });
+    return { id, cmd };
+  }
+
+  getProcess(id) { return this._instances.get(id)?.proc || null; }
+  getState(id) { return this._instances.get(id)?.state || null; }
+
+  removeDeadInstance(id) {
+    const inst = this._instances.get(id);
+    if (inst && !inst.proc.isRunning()) this._instances.delete(id);
+  }
+
+  updateServerConfig(id, updates) {
+    id = assertServerId(id);
+    const clean = { ...updates, id };
+    if ('name' in clean) clean.name = sanitizeName(clean.name, id);
+    if ('ram' in clean) clean.ram = normalizeRam(clean.ram);
+    if ('javaFlags' in clean) clean.javaFlags = String(clean.javaFlags || '').slice(0, 300);
+    this._saveServerMeta(id, clean);
+    return readServers().find(s => s.id === id);
+  }
+
+  _wireProcess(id, proc, state) {
+    proc.on('log', ({ line, level }) => this.emit('log', { serverId: id, line, level }));
     proc.on('ready', () => {
+      this._starting.delete(id);
       state.startedAt = Date.now();
+      state.health = 'online';
+      state.crashCount = 0;
       this._saveServerMeta(id, { lastStarted: new Date().toISOString() });
       this.emit('status', { serverId: id, event: 'ready', ...this.getStatus(id) });
     });
-
-    proc.on('tps', tps => {
-      state.tps = tps;
-      this.emit('status', { serverId: id, event: 'tps', tps });
-    });
-
-    proc.on('join', ({ player }) => {
-      if (!state.players.includes(player)) state.players.push(player);
-      this.emit('status', { serverId: id, event: 'join', player, players: [...state.players] });
-    });
-
-    proc.on('leave', ({ player }) => {
-      state.players = state.players.filter(p => p !== player);
-      this.emit('status', { serverId: id, event: 'leave', player, players: [...state.players] });
-    });
-
+    proc.on('tps', tps => { state.tps = tps; this.emit('status', { serverId: id, event: 'tps', tps }); });
+    proc.on('join', ({ player }) => { if (!state.players.includes(player)) state.players.push(player); this.emit('status', { serverId: id, event: 'join', player, players: [...state.players] }); });
+    proc.on('leave', ({ player }) => { state.players = state.players.filter(p => p !== player); this.emit('status', { serverId: id, event: 'leave', player, players: [...state.players] }); });
     proc.on('exit', ({ code, signal }) => {
-      this.emit('status', { serverId: id, event: 'exit', code, signal });
-      // Não remove do Map aqui — o Watchdog decide se reinicia
+      this._starting.delete(id);
+      state.health = state.expectedStop ? 'offline' : 'crashed';
+      state.players = [];
+      this._saveServerMeta(id, { lastExit: new Date().toISOString(), lastExitCode: code, lastExitSignal: signal });
+      log(state.expectedStop ? 'info' : 'warn', `Servidor ${id} encerrou`, { code, signal, expected: state.expectedStop });
+      this.emit('status', { serverId: id, event: 'exit', code, signal, expected: state.expectedStop, ...this.getStatus(id) });
     });
-
-    proc.start();
-    this.emit('log', {
-      serverId: id,
-      line: `[MineBolso] Iniciando servidor ${id}...`,
-      level: 'INFO',
+    proc.on('error', error => {
+      state.health = 'error';
+      this.emit('alert', this._alert(id, 'process_error', error.message));
     });
-
-    return { ok: true, id };
   }
 
-  // ── Para servidor ──────────────────────────────────────────────
-  stop(id) {
-    const inst = this._instances.get(id);
-    if (!inst) throw new Error(`Servidor ${id} não está rodando`);
-    inst.proc.stop();
-    return { ok: true, id };
-  }
-
-  // ── Reinicia servidor ──────────────────────────────────────────
-  restart(id) {
-    const inst = this._instances.get(id);
-    if (inst?.proc.isRunning()) {
-      inst.proc.once('exit', () => {
-        setTimeout(() => this.start(id), 1500);
-      });
-      inst.proc.stop();
-    } else {
-      this.start(id);
-    }
-    return { ok: true, id };
-  }
-
-  // ── Envia comando ao stdin ─────────────────────────────────────
-  sendCommand(id, cmd) {
-    const inst = this._instances.get(id);
-    if (!inst?.proc.isRunning()) throw new Error(`Servidor ${id} não está rodando`);
-    const ok = inst.proc.sendCommand(cmd);
-    if (!ok) throw new Error('stdin não disponível');
-    return { ok: true, cmd };
-  }
-
-  // ── Retorna o processo (para o Watchdog) ───────────────────────
-  getProcess(id) {
-    return this._instances.get(id)?.proc || null;
-  }
-
-  // ── Retorna state mutável (para o Watchdog atualizar ramUsed) ──
-  getState(id) {
-    return this._instances.get(id)?.state || null;
-  }
-
-  // ── Salva/atualiza metadados de um servidor em servers.json ────
   _saveServerMeta(id, updates) {
-    const list  = readServers();
-    const idx   = list.findIndex(s => s.id === id);
-    if (idx >= 0) {
-      list[idx] = { ...list[idx], ...updates };
-    } else {
-      list.push({ id, ...updates });
-    }
+    const list = readServers().filter(Boolean);
+    const idx = list.findIndex(s => s.id === id);
+    const next = { id, ...(idx >= 0 ? list[idx] : {}), ...updates };
+    if (idx >= 0) list[idx] = next;
+    else list.push(next);
     writeServers(list);
   }
 
-  // ── Atualiza config de um servidor (ram, name, etc) ────────────
-  updateServerConfig(id, updates) {
-    this._saveServerMeta(id, updates);
-    return readServers().find(s => s.id === id);
+  _alert(serverId, type, message) {
+    return { serverId, type, message, suggestion: 'Abra o console para detalhes e tente reiniciar o servidor.' };
   }
 }
 
-// Singleton
 module.exports = new ServerManager();
