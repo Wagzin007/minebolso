@@ -1,0 +1,13 @@
+{
+  "port": 25580,
+  "javaPath": "java",
+  "autoTunnel": true,
+  "watchdog": {
+    "enabled": true,
+    "autoRestart": true,
+    "tpsThreshold": 15,
+    "tpsAlertCycles": 3,
+    "ramThreshold": 90,
+    "checkIntervalMs": 10000
+  }
+}
