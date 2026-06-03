@@ -1,302 +1,259 @@
 'use strict';
 
-const express  = require('express');
-const fs       = require('fs');
-const path     = require('path');
-const router   = express.Router();
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
+const https = require('https');
+const { spawn } = require('child_process');
+const router = express.Router();
 
-const manager  = require('../server/ServerManager');
-const playit   = require('../tunnel/PlayitManager');
+const manager = require('../server/ServerManager');
+const scanner = require('../server/ServerScanner');
+const playit = require('../tunnel/PlayitManager');
 const { readConfig, writeConfig } = require('../config');
+const { log, userError, errorPayload } = require('../utils/diagnostics');
+const {
+  assertServerId,
+  sanitizeName,
+  normalizeRam,
+  assertPlayer,
+  sanitizeCommand,
+  safePath,
+  isEditableText,
+  assertJarUrl,
+} = require('../utils/validation');
 
-// ─────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────
-const ok  = (res, data)  => res.json({ ok: true,  ...data });
-const err = (res, msg, code = 400) => res.status(code).json({ ok: false, error: msg });
+const json = express.json({ limit: '2mb' });
+const ok = (res, data = {}) => res.json({ ok: true, ...data });
 
-// Previne path traversal — só permite acesso dentro do versionsDir
-function safePath(base, rel) {
-  const resolved = path.resolve(base, rel || '');
-  if (!resolved.startsWith(path.resolve(base))) return null;
-  return resolved;
+function asyncRoute(handler) {
+  return (req, res) => Promise.resolve(handler(req, res)).catch(error => fail(res, error, req));
 }
 
-// ─────────────────────────────────────────────────────────────────
+function fail(res, error, req) {
+  const status = error.statusCode || 500;
+  if (status >= 500) log('error', 'Falha em rota API', { method: req.method, url: req.originalUrl, error });
+  res.status(status).json({ ok: false, error: errorPayload(error) });
+}
+
+function ensureServerExists(id) {
+  const server = manager.getStatus(assertServerId(id));
+  if (!server) {
+    throw userError('Servidor não encontrado.', {
+      statusCode: 404,
+      code: 'SERVER_NOT_FOUND',
+      suggestion: 'Crie um servidor ou confira se a pasta contém um server.jar.',
+    });
+  }
+  return server;
+}
+
+router.get('/health', (req, res) => ok(res, { status: 'ready', uptime: process.uptime() }));
+
+
+// VERSION LIBRARY
+router.get('/versions', asyncRoute((req, res) => ok(res, {
+  library: scanner.getLibraryStatus(),
+  versions: scanner.scanVersions({ force: req.query.force === '1' }),
+})));
+
+router.post('/versions/rescan', asyncRoute((req, res) => ok(res, {
+  library: scanner.getLibraryStatus(),
+  versions: scanner.scanVersions({ force: true }),
+})));
+
+router.post('/versions/import', json, asyncRoute((req, res) => {
+  const result = scanner.importInstallation(req.body?.sourcePath, { limit: Number(req.body?.limit) || 40 });
+  ok(res, { import: result, library: scanner.getLibraryStatus(), versions: scanner.scanVersions({ force: true }) });
+}));
+
+router.post('/minecraft/open', asyncRoute((req, res) => {
+  const cfg = readConfig();
+  openFolder(req.body?.target === 'versions' ? cfg.versionsDir : cfg.baseDir);
+  ok(res, { opened: true, path: req.body?.target === 'versions' ? cfg.versionsDir : cfg.baseDir });
+}));
+
 // SERVERS
-// ─────────────────────────────────────────────────────────────────
+router.get('/servers', asyncRoute((req, res) => ok(res, { servers: manager.listAll() })));
 
-// GET /api/servers — lista todos
-router.get('/servers', (req, res) => {
-  try {
-    ok(res, { servers: manager.listAll() });
-  } catch (e) {
-    err(res, e.message, 500);
+router.post('/servers', json, asyncRoute(async (req, res) => {
+  const cfg = readConfig();
+  const id = assertServerId(req.body?.id || req.body?.version);
+  const name = sanitizeName(req.body?.name, id);
+  const ram = normalizeRam(req.body?.ram, cfg.defaultRam || 1);
+  const jarUrl = req.body?.jarUrl ? assertJarUrl(req.body.jarUrl) : null;
+  const serverDir = safePath(cfg.versionsDir, id);
+  const jarPath = path.join(serverDir, 'server.jar');
+
+  if (!fs.existsSync(serverDir)) fs.mkdirSync(serverDir, { recursive: true });
+  if (jarUrl && !fs.existsSync(jarPath)) await downloadFile(jarUrl, jarPath, 140 * 1024 * 1024);
+  if (!fs.existsSync(jarPath)) {
+    throw userError('server.jar não encontrado para esta versão.', {
+      statusCode: 409,
+      code: 'JAR_REQUIRED',
+      suggestion: `Coloque o arquivo em ${jarPath} ou informe um link direto no campo jarUrl.`,
+    });
   }
-});
 
-// GET /api/servers/:id — status de um
-router.get('/servers/:id', (req, res) => {
-  const s = manager.getStatus(req.params.id);
-  if (!s) return err(res, 'Servidor não encontrado', 404);
-  ok(res, { server: s });
-});
+  manager.updateServerConfig(id, { name, ram, autoRestart: true, lastCreated: new Date().toISOString() });
+  ok(res, { server: manager.getStatus(id) });
+}));
 
-// POST /api/servers/:id/start
-router.post('/servers/:id/start', (req, res) => {
-  try {
-    ok(res, manager.start(req.params.id));
-  } catch (e) {
-    err(res, e.message);
-  }
-});
+router.get('/servers/:id', asyncRoute((req, res) => ok(res, { server: ensureServerExists(req.params.id) })));
+router.post('/servers/:id/start', asyncRoute((req, res) => ok(res, manager.start(assertServerId(req.params.id)))));
+router.post('/servers/:id/stop', asyncRoute((req, res) => ok(res, manager.stop(assertServerId(req.params.id)))));
+router.post('/servers/:id/restart', asyncRoute((req, res) => ok(res, manager.restart(assertServerId(req.params.id)))));
+router.post('/servers/:id/command', json, asyncRoute((req, res) => {
+  ok(res, manager.sendCommand(assertServerId(req.params.id), sanitizeCommand(req.body?.cmd)));
+}));
+router.patch('/servers/:id', json, asyncRoute((req, res) => {
+  const id = assertServerId(req.params.id);
+  ensureServerExists(id);
+  const updates = {};
+  if ('name' in req.body) updates.name = sanitizeName(req.body.name, id);
+  if ('ram' in req.body) updates.ram = normalizeRam(req.body.ram);
+  if ('autoStart' in req.body) updates.autoStart = Boolean(req.body.autoStart);
+  if ('autoRestart' in req.body) updates.autoRestart = Boolean(req.body.autoRestart);
+  if ('javaFlags' in req.body) updates.javaFlags = String(req.body.javaFlags || '').slice(0, 300);
+  ok(res, { server: manager.updateServerConfig(id, updates) });
+}));
 
-// POST /api/servers/:id/stop
-router.post('/servers/:id/stop', (req, res) => {
-  try {
-    ok(res, manager.stop(req.params.id));
-  } catch (e) {
-    err(res, e.message);
-  }
-});
-
-// POST /api/servers/:id/restart
-router.post('/servers/:id/restart', (req, res) => {
-  try {
-    ok(res, manager.restart(req.params.id));
-  } catch (e) {
-    err(res, e.message);
-  }
-});
-
-// POST /api/servers/:id/command
-router.post('/servers/:id/command', express.json(), (req, res) => {
-  const { cmd } = req.body || {};
-  if (!cmd) return err(res, 'Campo cmd obrigatório');
-  try {
-    ok(res, manager.sendCommand(req.params.id, cmd));
-  } catch (e) {
-    err(res, e.message);
-  }
-});
-
-// PATCH /api/servers/:id — atualiza config (ram, name, etc)
-router.patch('/servers/:id', express.json(), (req, res) => {
-  try {
-    const updated = manager.updateServerConfig(req.params.id, req.body);
-    ok(res, { server: updated });
-  } catch (e) {
-    err(res, e.message);
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────
-// FILE MANAGER
-// ─────────────────────────────────────────────────────────────────
-
-// GET /api/files?serverId=1.20.4&path=.
-router.get('/files', (req, res) => {
-  const cfg  = readConfig();
-  const base = req.query.serverId
-    ? path.join(cfg.versionsDir, req.query.serverId)
-    : cfg.versionsDir;
-
-  const target = safePath(cfg.versionsDir, req.query.serverId
-    ? path.join(req.query.serverId, req.query.path || '')
-    : (req.query.path || ''));
-
-  if (!target) return err(res, 'Caminho inválido', 403);
-  if (!fs.existsSync(target)) return err(res, 'Caminho não encontrado', 404);
+// FILES
+router.get('/files', asyncRoute((req, res) => {
+  const cfg = readConfig();
+  const rel = req.query.serverId ? path.join(assertServerId(req.query.serverId), req.query.path || '') : (req.query.path || '');
+  const target = safePath(cfg.versionsDir, rel);
+  if (!fs.existsSync(target)) throw userError('Caminho não encontrado.', { statusCode: 404, code: 'PATH_NOT_FOUND' });
 
   const stat = fs.statSync(target);
   if (stat.isDirectory()) {
-    try {
-      const entries = fs.readdirSync(target, { withFileTypes: true }).map(e => ({
-        name:  e.name,
-        isDir: e.isDirectory(),
-        size:  e.isDirectory() ? null : fs.statSync(path.join(target, e.name)).size,
-      }));
-      ok(res, { path: target, entries });
-    } catch (e) {
-      err(res, e.message, 500);
-    }
-  } else {
-    // Arquivo — só lê textos (server.properties, json, yaml, txt, log)
-    const TEXT_EXTS = ['.properties', '.json', '.yml', '.yaml', '.txt', '.log', '.toml', '.cfg', '.conf'];
-    if (!TEXT_EXTS.includes(path.extname(target).toLowerCase())) {
-      return err(res, 'Tipo de arquivo não suportado para edição');
-    }
-    try {
-      const content = fs.readFileSync(target, 'utf8');
-      ok(res, { path: target, content });
-    } catch (e) {
-      err(res, e.message, 500);
-    }
+    const entries = fs.readdirSync(target, { withFileTypes: true }).map(e => {
+      const entryPath = path.join(target, e.name);
+      let size = null;
+      try { size = e.isDirectory() ? null : fs.statSync(entryPath).size; } catch {}
+      return { name: e.name, isDir: e.isDirectory(), size };
+    }).sort((a, b) => Number(b.isDir) - Number(a.isDir) || a.name.localeCompare(b.name));
+    return ok(res, { path: target, entries });
   }
-});
 
-// PUT /api/files — salva conteúdo de arquivo texto
-router.put('/files', express.json({ limit: '2mb' }), (req, res) => {
-  const cfg    = readConfig();
+  if (!isEditableText(target)) throw userError('Tipo de arquivo não suportado para edição.', { statusCode: 415, code: 'UNSUPPORTED_FILE_TYPE' });
+  ok(res, { path: target, content: fs.readFileSync(target, 'utf8') });
+}));
+
+router.put('/files', json, asyncRoute((req, res) => {
+  const cfg = readConfig();
   const { filePath, content } = req.body || {};
-  if (!filePath || content === undefined) return err(res, 'filePath e content obrigatórios');
-
+  if (!filePath || content === undefined) throw userError('filePath e content são obrigatórios.', { code: 'MISSING_FILE_PAYLOAD' });
   const target = safePath(cfg.versionsDir, filePath);
-  if (!target) return err(res, 'Caminho inválido', 403);
+  if (!isEditableText(target)) throw userError('Tipo de arquivo não suportado para edição.', { statusCode: 415, code: 'UNSUPPORTED_FILE_TYPE' });
+  fs.writeFileSync(target, String(content), 'utf8');
+  ok(res, { path: target });
+}));
 
-  try {
-    fs.writeFileSync(target, content, 'utf8');
-    ok(res, { path: target });
-  } catch (e) {
-    err(res, e.message, 500);
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────
 // PLAYERS
-// ─────────────────────────────────────────────────────────────────
+router.get('/players/:id', asyncRoute((req, res) => ok(res, { players: ensureServerExists(req.params.id).players || [] })));
+router.post('/players/:id/kick', json, asyncRoute((req, res) => {
+  const player = assertPlayer(req.body?.player);
+  const reason = req.body?.reason ? String(req.body.reason).replace(/[\r\n]/g, ' ').slice(0, 120) : '';
+  ok(res, manager.sendCommand(assertServerId(req.params.id), `kick ${player}${reason ? ` ${reason}` : ''}`));
+}));
+router.post('/players/:id/ban', json, asyncRoute((req, res) => {
+  const player = assertPlayer(req.body?.player);
+  const reason = req.body?.reason ? String(req.body.reason).replace(/[\r\n]/g, ' ').slice(0, 120) : '';
+  ok(res, manager.sendCommand(assertServerId(req.params.id), `ban ${player}${reason ? ` ${reason}` : ''}`));
+}));
+router.post('/players/:id/op', json, asyncRoute((req, res) => ok(res, manager.sendCommand(assertServerId(req.params.id), `op ${assertPlayer(req.body?.player)}`))));
 
-// GET /api/players/:id — jogadores online (estado em memória)
-router.get('/players/:id', (req, res) => {
-  const s = manager.getStatus(req.params.id);
-  if (!s) return err(res, 'Servidor não encontrado', 404);
-  ok(res, { players: s.players });
-});
+// SYSTEM
+router.get('/system', asyncRoute(async (req, res) => ok(res, { system: await readSystemStats() })));
 
-// POST /api/players/:id/kick
-router.post('/players/:id/kick', express.json(), (req, res) => {
-  const { player, reason } = req.body || {};
-  if (!player) return err(res, 'player obrigatório');
+// TUNNEL
+router.get('/tunnel', (req, res) => ok(res, playit.getStatus()));
+router.post('/tunnel/secret', json, asyncRoute(async (req, res) => {
+  const secretKey = String(req.body?.secretKey || '').trim();
+  if (secretKey.length < 10) throw userError('Secret inválido.', { code: 'INVALID_SECRET', suggestion: 'Cole o secret completo gerado no painel do playit.gg.' });
+  playit.stop();
+  playit.saveSecret(secretKey);
+  await playit.start();
+  ok(res, { saved: true, tunnel: playit.getStatus() });
+}));
+router.post('/tunnel/start', asyncRoute(async (req, res) => { await playit.start(); ok(res, { tunnel: playit.getStatus() }); }));
+router.post('/tunnel/stop', (req, res) => { playit.stop(); ok(res, { tunnel: playit.getStatus() }); });
+router.post('/tunnel/restart', asyncRoute(async (req, res) => { playit.stop(); await wait(800); await playit.start(); ok(res, { tunnel: playit.getStatus() }); }));
+
+// CONFIG
+router.get('/config', (req, res) => ok(res, { config: readConfig() }));
+router.patch('/config', json, asyncRoute((req, res) => {
+  const body = req.body || {};
+  const updates = {};
+  if ('javaPath' in body) updates.javaPath = String(body.javaPath || 'java').trim() || 'java';
+  if ('port' in body) updates.port = Math.min(65535, Math.max(1024, Number.parseInt(body.port, 10) || 25580));
+  if ('defaultRam' in body) updates.defaultRam = normalizeRam(body.defaultRam);
+  if ('autoTunnel' in body) updates.autoTunnel = Boolean(body.autoTunnel);
+  ok(res, { config: writeConfig(updates) });
+}));
+
+async function readSystemStats() {
   try {
-    const cmd = reason ? `kick ${player} ${reason}` : `kick ${player}`;
-    ok(res, manager.sendCommand(req.params.id, cmd));
-  } catch (e) { err(res, e.message); }
-});
-
-// POST /api/players/:id/ban
-router.post('/players/:id/ban', express.json(), (req, res) => {
-  const { player, reason } = req.body || {};
-  if (!player) return err(res, 'player obrigatório');
-  try {
-    const cmd = reason ? `ban ${player} ${reason}` : `ban ${player}`;
-    ok(res, manager.sendCommand(req.params.id, cmd));
-  } catch (e) { err(res, e.message); }
-});
-
-// POST /api/players/:id/op
-router.post('/players/:id/op', express.json(), (req, res) => {
-  const { player } = req.body || {};
-  if (!player) return err(res, 'player obrigatório');
-  try {
-    ok(res, manager.sendCommand(req.params.id, `op ${player}`));
-  } catch (e) { err(res, e.message); }
-});
-
-// ─────────────────────────────────────────────────────────────────
-// SYSTEM STATS
-// ─────────────────────────────────────────────────────────────────
-
-router.get('/system', async (req, res) => {
-  try {
-    let stats;
-    try {
-      const si = require('systeminformation');
-      const [cpu, mem, disk] = await Promise.all([
-        si.currentLoad(),
-        si.mem(),
-        si.fsSize(),
-      ]);
-      stats = {
-        cpu:  Math.round(cpu.currentLoad),
-        ram:  { used: mem.active, total: mem.total },
-        disk: disk[0] ? { used: disk[0].used, size: disk[0].size } : null,
-      };
-    } catch {
-      // Fallback Android/Termux via /proc
-      stats = readProcStats();
-    }
-    ok(res, { system: stats });
-  } catch (e) {
-    err(res, e.message, 500);
+    const si = require('systeminformation');
+    const [cpu, mem, disk] = await Promise.all([si.currentLoad(), si.mem(), si.fsSize()]);
+    const primaryDisk = Array.isArray(disk) ? disk.find(d => d.mount === '/') || disk[0] : null;
+    return { cpu: Math.round(cpu.currentLoad), ram: { used: mem.active, total: mem.total }, disk: primaryDisk ? { used: primaryDisk.used, size: primaryDisk.size } : null };
+  } catch {
+    return readProcStats();
   }
-});
+}
 
 function readProcStats() {
   let ramUsed = 0, ramTotal = 0;
   try {
     const meminfo = fs.readFileSync('/proc/meminfo', 'utf8');
-    const getVal  = key => {
-      const m = new RegExp(`${key}:\\s+(\\d+)`).exec(meminfo);
-      return m ? parseInt(m[1]) * 1024 : 0;
-    };
+    const getVal = key => { const m = new RegExp(`${key}:\\s+(\\d+)`).exec(meminfo); return m ? Number.parseInt(m[1], 10) * 1024 : 0; };
     ramTotal = getVal('MemTotal');
-    const free    = getVal('MemFree');
-    const buffers = getVal('Buffers');
-    const cached  = getVal('Cached');
-    ramUsed = ramTotal - free - buffers - cached;
+    ramUsed = ramTotal - getVal('MemFree') - getVal('Buffers') - getVal('Cached');
   } catch {}
-  return { cpu: null, ram: { used: ramUsed, total: ramTotal }, disk: null };
+  return { cpu: null, ram: { used: Math.max(0, ramUsed), total: ramTotal }, disk: null };
 }
 
-// ─────────────────────────────────────────────────────────────────
-// TUNNEL
-// ─────────────────────────────────────────────────────────────────
-
-router.get('/tunnel', (req, res) => {
-  ok(res, {
-    running:   playit.isRunning(),
-    address:   playit.getAddress(),
-    hasSecret: playit.hasSecret(),
+function downloadFile(url, destPath, maxBytes) {
+  const client = url.startsWith('https:') ? https : http;
+  return new Promise((resolve, reject) => {
+    const tmp = `${destPath}.download`;
+    const request = client.get(url, { headers: { 'User-Agent': 'MineBolso/2.0' } }, response => {
+      if ([301, 302, 307, 308].includes(response.statusCode)) {
+        response.resume();
+        return downloadFile(response.headers.location, destPath, maxBytes).then(resolve, reject);
+      }
+      if (response.statusCode !== 200) {
+        response.resume();
+        return reject(userError(`Download falhou (HTTP ${response.statusCode}).`, { statusCode: 502, code: 'JAR_DOWNLOAD_FAILED' }));
+      }
+      let received = 0;
+      const file = fs.createWriteStream(tmp);
+      response.on('data', chunk => {
+        received += chunk.length;
+        if (received > maxBytes) {
+          request.destroy(userError('Arquivo jar maior que o limite seguro.', { statusCode: 413, code: 'JAR_TOO_LARGE' }));
+        }
+      });
+      response.pipe(file);
+      file.on('finish', () => file.close(() => { fs.renameSync(tmp, destPath); resolve(); }));
+      file.on('error', reject);
+    });
+    request.on('error', error => { fs.unlink(tmp, () => {}); reject(error); });
+    request.setTimeout(45_000, () => request.destroy(userError('Tempo limite ao baixar o jar.', { statusCode: 504, code: 'JAR_DOWNLOAD_TIMEOUT' })));
   });
-});
+}
 
-// POST /api/tunnel/secret — salva o secret_key e (re)inicia o tunnel
-router.post('/tunnel/secret', express.json(), async (req, res) => {
-  const { secretKey } = req.body || {};
-  if (!secretKey || secretKey.trim().length < 10) {
-    return err(res, 'secretKey inválido');
-  }
-  try {
-    playit.stop();
-    playit.saveSecret(secretKey);
-    setTimeout(async () => { try { await playit.start(); } catch {} }, 500);
-    ok(res, { saved: true });
-  } catch (e) { err(res, e.message); }
-});
+function openFolder(folderPath) {
+  const platform = process.platform;
+  const cmd = platform === 'win32' ? 'explorer.exe' : platform === 'darwin' ? 'open' : 'xdg-open';
+  const child = spawn(cmd, [folderPath], { detached: true, stdio: 'ignore' });
+  child.on('error', error => log('warn', 'Não foi possível abrir pasta automaticamente', { folderPath, error }));
+  child.unref();
+}
 
-router.post('/tunnel/start', async (req, res) => {
-  try {
-    await playit.start();
-    ok(res, { started: true });
-  } catch (e) { err(res, e.message); }
-});
-
-router.post('/tunnel/stop', (req, res) => {
-  playit.stop();
-  ok(res, { stopped: true });
-});
-
-router.post('/tunnel/restart', async (req, res) => {
-  playit.stop();
-  setTimeout(async () => {
-    try { await playit.start(); } catch {}
-  }, 1500);
-  ok(res, { restarting: true });
-});
-
-// ─────────────────────────────────────────────────────────────────
-// CONFIG GLOBAL
-// ─────────────────────────────────────────────────────────────────
-
-router.get('/config', (req, res) => {
-  ok(res, { config: readConfig() });
-});
-
-router.patch('/config', express.json(), (req, res) => {
-  try {
-    const updated = writeConfig(req.body);
-    ok(res, { config: updated });
-  } catch (e) { err(res, e.message, 500); }
-});
+function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 module.exports = router;

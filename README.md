@@ -320,3 +320,14 @@ MIT — livre para usar, modificar e distribuir.
 ---
 
 *MineBolso — Feito para a comunidade. Open source e gratuito.*
+
+## MineBolso 2.0: biblioteca local `.minecraft`
+
+O MineBolso agora usa uma pasta `.minecraft/` na raiz do projeto. Para jogar:
+
+1. Copie sua versão, modpack ou instalação exportada para `.minecraft/versions/`.
+2. Abra o aplicativo.
+3. Use a tela **Biblioteca de Versões** para validar a instalação.
+4. Clique em **Iniciar** e compartilhe o endereço do túnel playit.
+
+A biblioteca detecta Vanilla, Forge, NeoForge, Fabric, Quilt e modpacks customizados quando há um `server.jar`, jar de loader ou script `run/start/server` disponível. Também há ações para abrir a pasta local, reescanear e importar instalações existentes de launchers.

@@ -1,1406 +1,449 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0b0d">
-<title>MineBolso</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
-<style>
-/* ═══════════════════════════════════════════════════
-   TOKENS
-═══════════════════════════════════════════════════ */
-:root {
-  --bg0:#0a0b0d; --bg1:#111318; --bg2:#181c24; --bg3:#1e2330;
-  --bdr:#252b3a;  --bdrB:#2e3650;
-  --amb:#f5a623; --ambD:#7a4e0a; --ambG:rgba(245,166,35,.1);
-  --grn:#4ade80; --grnD:#166534; --grnG:rgba(74,222,128,.08);
-  --red:#f87171; --redD:#7f1d1d;
-  --blu:#60a5fa; --bluD:#1e3a5f;
-  --t0:#e8eaf0;  --t1:#9aa0b8;  --t2:#5a6080;
-  --mono:'JetBrains Mono',monospace;
-  --sans:'Syne',sans-serif;
-  --r:6px; --r2:10px;
-  --nav-h:52px;
-  --tab-h:52px;
-}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07130d">
+  <title>MineBolso 2.0</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07130d;
+      --panel: #0d1b13cc;
+      --panel-2: #13251a;
+      --line: #244132;
+      --line-strong: #35654b;
+      --text: #f3fff6;
+      --muted: #a7b9ad;
+      --soft: #6f8376;
+      --green: #58f28a;
+      --amber: #ffd166;
+      --red: #ff6b6b;
+      --blue: #76c7ff;
+      --shadow: 0 24px 80px #0008;
+      --radius: 24px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
 
-/* ═══════════════════════════════════════════════════
-   RESET / BASE
-═══════════════════════════════════════════════════ */
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--t0);font-family:var(--mono);font-size:14px}
-button{font-family:var(--mono);cursor:pointer;border:none;background:none;color:inherit}
-input,textarea,select{font-family:var(--mono);color:var(--t0);background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px;outline:none;width:100%;font-size:12px;transition:border-color .15s}
-input:focus,textarea:focus,select:focus{border-color:var(--amb);box-shadow:0 0 0 2px var(--ambG)}
-select{cursor:pointer}
-select option{background:var(--bg2)}
-a{color:inherit;text-decoration:none}
-::-webkit-scrollbar{width:3px;height:3px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--bdrB);border-radius:2px}
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background:
+        radial-gradient(circle at 12% -10%, #2df98c33, transparent 34rem),
+        radial-gradient(circle at 92% 6%, #76c7ff22, transparent 30rem),
+        linear-gradient(135deg, #06100b, #09150e 48%, #08110d);
+      color: var(--text);
+    }
 
-/* ═══════════════════════════════════════════════════
-   LAYOUT — MOBILE-FIRST
-   Top: logo bar (52px) | Content: flex | Bottom: tab bar (52px)
-═══════════════════════════════════════════════════ */
-#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { max-width: 1440px; margin: auto; padding: 22px; }
+    .top { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .cube { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #7ee07c 0 45%, #8f6b3d 46%); box-shadow: inset 0 0 0 2px #ffffff22, 0 14px 40px #24d56b33; }
+    h1, h2, h3, h4, p { margin-top: 0; }
+    h1 { margin-bottom: 4px; font-size: 22px; }
+    .brand p, .muted { color: var(--muted); }
+    .spacer { flex: 1; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: #0b1a12b5; color: var(--muted); font-weight: 750; font-size: 12px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--soft); }
+    .dot.ok { background: var(--green); box-shadow: 0 0 18px var(--green); }
+    .dot.warn { background: var(--amber); box-shadow: 0 0 18px var(--amber); }
 
-/* ── Top bar ── */
-#topbar{
-  height:var(--nav-h);flex-shrink:0;
-  background:var(--bg1);border-bottom:1px solid var(--bdr);
-  display:flex;align-items:center;padding:0 14px;gap:10px;
-  position:relative;z-index:100;
-}
-.logo{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:800;font-size:17px;letter-spacing:-.5px}
-.logo-px{width:26px;height:26px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:1.5px;flex-shrink:0}
-.logo-px span{border-radius:1px}
-.logo-px span:nth-child(1){background:#5b9bd5}.logo-px span:nth-child(2){background:#4a7fb5}
-.logo-px span:nth-child(3){background:#3d6896}.logo-px span:nth-child(4){background:#2d5078}
-.logo-px span:nth-child(5){background:#5b8c3a}.logo-px span:nth-child(6){background:var(--amb)}
-.logo-px span:nth-child(7){background:#7ab54e}.logo-px span:nth-child(8){background:#4a7fb5}
-.logo-px span:nth-child(9){background:#7ab54e}.logo-px span:nth-child(10){background:#6b9f40}
-.logo-px span:nth-child(11){background:var(--amb)}.logo-px span:nth-child(12){background:#5b8c3a}
-.logo-px span:nth-child(13){background:#8b6c4a}.logo-px span:nth-child(14){background:#7a5c3a}
-.logo-px span:nth-child(15){background:#6a4c2a}.logo-px span:nth-child(16){background:#5a3c1a}
-.logo em{font-style:normal;color:var(--amb)}
+    .grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); gap: 22px; }
+    .panel { background: linear-gradient(180deg, #102018cc, #0a160fcc); border: 1px solid #ffffff12; border-radius: var(--radius); box-shadow: var(--shadow); backdrop-filter: blur(18px); overflow: hidden; }
+    .section { padding: 22px; border-top: 1px solid #ffffff10; }
+    .hero { padding: 30px; display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; }
+    .hero h2 { font-size: clamp(32px, 5vw, 60px); line-height: .95; letter-spacing: -.06em; margin-bottom: 14px; }
+    .eyebrow { color: var(--green); font-weight: 900; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+    .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 28px 28px; }
+    .metric { background: #ffffff0b; border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
+    .metric b { display: block; font-size: 26px; }
+    .metric span { color: var(--muted); font-size: 12px; font-weight: 750; }
+    .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .section-head h3 { margin-bottom: 4px; }
 
-.topbar-mid{flex:1;display:flex;justify-content:center}
-#globalPill{
-  display:flex;align-items:center;gap:6px;
-  background:var(--bg2);border:1px solid var(--bdr);border-radius:4px;
-  padding:4px 10px;font-size:10px;color:var(--t1);letter-spacing:.5px;text-transform:uppercase;
-}
-.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
-.dot-grn{background:var(--grn);box-shadow:0 0 5px var(--grn);animation:blink 2s ease-in-out infinite}
-.dot-amb{background:var(--amb);box-shadow:0 0 5px var(--amb)}
-.dot-red{background:var(--red);box-shadow:0 0 5px var(--red)}
-.dot-off{background:var(--t2)}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+    .btn { border: 0; border-radius: 14px; padding: 12px 16px; min-height: 44px; background: #1a2f22; color: var(--text); font-weight: 850; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: .18s transform, .18s background, .18s opacity; }
+    .btn:hover { transform: translateY(-1px); background: #23452f; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .btn.primary { background: linear-gradient(135deg, var(--green), #20bf63); color: #041107; box-shadow: 0 18px 40px #22c96530; }
+    .btn.ghost { background: #ffffff0c; border: 1px solid var(--line); }
+    .btn.danger { background: #432020; color: #ffc9c9; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
-#btnSettings{width:32px;height:32px;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;flex-shrink:0}
-#btnSettings:hover,#btnSettings:active{border-color:var(--amb);background:var(--ambG)}
+    .library-tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .dropzone { border: 1px dashed var(--line-strong); background: #ffffff08; border-radius: 20px; padding: 18px; color: var(--muted); margin-bottom: 16px; }
+    .dropzone.active { border-color: var(--green); color: var(--text); background: #58f28a12; }
+    .version-list, .server-list { display: grid; gap: 12px; }
+    .version, .server { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; background: #ffffff0b; border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+    .version.ok, .server.online { border-color: #47de8077; background: #1cd86512; }
+    .version.warning { border-color: #ffd16677; }
+    .version.broken { border-color: #ff6b6b77; background: #ff6b6b10; }
+    .title-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .title-row h4 { margin: 0; font-size: 17px; }
+    .badge { border: 1px solid var(--line); background: #07120c99; color: var(--muted); border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 750; }
+    .badge.ok { color: var(--green); border-color: #58f28a66; }
+    .badge.warning { color: var(--amber); border-color: #ffd16666; }
+    .badge.broken { color: #ffb0b0; border-color: #ff6b6b66; }
+    .message { color: var(--muted); line-height: 1.45; font-size: 14px; margin-bottom: 0; }
 
-/* ── Scroll area ── */
-#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+    .stack { display: grid; gap: 22px; align-content: start; }
+    .address { margin: 14px 0; padding: 14px; border-radius: 16px; background: #052411; border: 1px solid #36d87866; color: var(--green); font-weight: 900; word-break: break-all; }
+    .console { height: 320px; background: #030805; border: 1px solid #193223; border-radius: 18px; overflow: auto; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.7; }
+    .log.warn { color: var(--amber); }
+    .log.error, .log.fatal { color: var(--red); }
+    .log.info { color: #c8ffda; }
+    .cmd { display: flex; gap: 10px; margin-top: 10px; }
+    input { width: 100%; border: 1px solid var(--line); background: #06120c; color: var(--text); border-radius: 14px; padding: 13px 14px; outline: none; }
+    input:focus { border-color: var(--green); box-shadow: 0 0 0 4px #58f28a1a; }
+    .empty { border: 1px dashed var(--line-strong); border-radius: 20px; padding: 22px; text-align: center; color: var(--muted); background: #ffffff08; }
+    .toast-wrap { position: fixed; right: 18px; bottom: 18px; display: grid; gap: 10px; z-index: 20; }
+    .toast { padding: 13px 15px; border-radius: 14px; background: #102018; border: 1px solid var(--line); box-shadow: var(--shadow); font-weight: 800; }
+    .toast.err { border-color: #ff6b6b66; }
 
-/* ── Bottom tab bar ── */
-#tabbar{
-  height:var(--tab-h);flex-shrink:0;
-  background:var(--bg1);border-top:1px solid var(--bdr);
-  display:flex;align-items:stretch;
-  /* safe area for Android */
-  padding-bottom:env(safe-area-inset-bottom,0);
-}
-.tab{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--t2);
-  cursor:pointer;transition:color .15s;padding:6px 0;border-top:2px solid transparent;
-  position:relative;
-}
-.tab .ti{font-size:18px;line-height:1}
-.tab.active{color:var(--amb);border-top-color:var(--amb)}
-.tab .badge{
-  position:absolute;top:6px;right:calc(50% - 18px);
-  background:var(--red);color:#fff;font-size:8px;font-weight:800;
-  width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  border:1.5px solid var(--bg1);
-}
-
-/* ═══════════════════════════════════════════════════
-   VIEWS
-═══════════════════════════════════════════════════ */
-.view{display:none;padding:16px;flex-direction:column;gap:14px;min-height:100%}
-.view.active{display:flex}
-
-/* ═══════════════════════════════════════════════════
-   COMPONENTS
-═══════════════════════════════════════════════════ */
-
-/* ── Section header ── */
-.sh{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:2px}
-.sh-title{font-family:var(--sans);font-size:20px;font-weight:800;letter-spacing:-.5px;line-height:1}
-.sh-sub{font-size:10px;color:var(--t2);margin-top:3px;letter-spacing:.3px}
-
-/* ── Card ── */
-.card{background:var(--bg1);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px}
-.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.card-ttl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--t2)}
-
-/* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .15s;border:1px solid transparent;white-space:nowrap}
-.btn-amb{background:var(--amb);color:#0a0b0d;border-color:var(--amb)}
-.btn-amb:active{background:#ffc04a;transform:scale(.97)}
-.btn-ghost{background:transparent;border-color:var(--bdrB);color:var(--t1)}
-.btn-ghost:active{border-color:var(--amb);color:var(--amb);background:var(--ambG)}
-.btn-grn{background:var(--grn);color:#0a0b0d;border-color:var(--grn)}
-.btn-grn:active{transform:scale(.97)}
-.btn-red{background:transparent;border-color:var(--redD);color:var(--red)}
-.btn-red:active{background:rgba(248,113,113,.1)}
-.btn-sm{padding:5px 10px;font-size:10px}
-.btn-xs{padding:3px 8px;font-size:9px;border-radius:4px}
-.btn-full{width:100%;justify-content:center;padding:11px}
-
-/* ── Stats row ── */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat{background:var(--bg1);border:1px solid var(--bdr);border-radius:var(--r);padding:12px;position:relative;overflow:hidden}
-.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.stat.amb::before{background:var(--amb)}.stat.grn::before{background:var(--grn)}
-.stat.blu::before{background:var(--blu)}.stat.red::before{background:var(--red)}
-.stat-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);margin-bottom:6px}
-.stat-val{font-family:var(--sans);font-size:26px;font-weight:800;line-height:1;margin-bottom:3px}
-.stat.amb .stat-val{color:var(--amb)}.stat.grn .stat-val{color:var(--grn)}
-.stat.blu .stat-val{color:var(--blu)}.stat.red .stat-val{color:var(--red)}
-.stat-sub{font-size:10px;color:var(--t2)}
-
-/* ── Perf bars ── */
-.perf-item{margin-bottom:10px}
-.perf-item:last-child{margin-bottom:0}
-.perf-row{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px}
-.perf-name{color:var(--t1)}.perf-val{color:var(--t0);font-weight:700}
-.perf-track{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
-.perf-fill{height:100%;border-radius:2px;transition:width .6s ease}
-.perf-fill.grn{background:var(--grn)}.perf-fill.amb{background:var(--amb)}
-.perf-fill.blu{background:var(--blu)}.perf-fill.red{background:var(--red)}
-
-/* ── Server card ── */
-.srv-card{background:var(--bg1);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;transition:border-color .15s}
-.srv-card.running{border-color:var(--grnD)}
-.srv-card-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.srv-icon{width:38px;height:38px;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.srv-name{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--t0);line-height:1.2}
-.srv-version{font-size:10px;color:var(--t2);margin-top:2px}
-.srv-status-row{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-left:auto;flex-shrink:0}
-.srv-status-row.online{color:var(--grn)}.srv-status-row.offline{color:var(--t2)}.srv-status-row.starting{color:var(--amb)}
-.srv-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
-.srv-meta-item{background:var(--bg2);border-radius:4px;padding:6px 8px}
-.srv-meta-lbl{font-size:9px;color:var(--t2);letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px}
-.srv-meta-val{font-size:11px;font-weight:700;color:var(--t0)}
-.srv-actions{display:flex;gap:6px;flex-wrap:wrap}
-
-/* ── Tunnel box ── */
-.tunnel-box{background:var(--bg2);border:1px solid var(--bdrB);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.tunnel-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);white-space:nowrap}
-.tunnel-addr{flex:1;font-size:12px;font-weight:700;color:var(--grn);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.copy-btn{background:var(--bg1);border:1px solid var(--bdr);border-radius:4px;padding:4px 8px;font-size:10px;color:var(--t1);cursor:pointer;white-space:nowrap;font-family:var(--mono);transition:all .12s}
-.copy-btn:active{border-color:var(--amb);color:var(--amb)}
-
-/* ── Terminal ── */
-#termWrap{background:#050608;border:1px solid var(--bdr);border-radius:var(--r2);display:flex;flex-direction:column;flex:1;min-height:300px}
-.term-bar{background:var(--bg1);border-bottom:1px solid var(--bdr);border-radius:var(--r2) var(--r2) 0 0;padding:8px 12px;display:flex;align-items:center;gap:8px}
-.term-dots{display:flex;gap:5px}
-.td{width:10px;height:10px;border-radius:50%}
-.td-r{background:#ef4444}.td-y{background:var(--amb)}.td-g{background:var(--grn)}
-.term-title{flex:1;text-align:center;font-size:11px;color:var(--t2);letter-spacing:.5px}
-#termOut{flex:1;overflow-y:auto;padding:10px 12px;font-size:11px;line-height:1.85;min-height:240px;max-height:50vh;-webkit-overflow-scrolling:touch}
-#termOut::-webkit-scrollbar{width:2px}
-.tl{display:block}.ti{color:#5a8ecc}.tw{color:var(--amb)}.te{color:var(--red)}.tok{color:var(--grn)}.td2{color:var(--t2)}.tw2{color:var(--t0)}.tcmd{color:var(--amb);font-weight:700}
-.term-input-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--bdr);background:var(--bg1);border-radius:0 0 var(--r2) var(--r2)}
-.term-prompt{color:var(--amb);font-size:13px;font-weight:700;flex-shrink:0}
-#termIn{flex:1;background:transparent;border:none;outline:none;font-family:var(--mono);font-size:12px;color:var(--t0);caret-color:var(--amb)}
-#termIn::placeholder{color:var(--t2)}
-
-/* ── Quick commands grid ── */
-.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.cmd-btn{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 10px;cursor:pointer;text-align:left;transition:all .12s}
-.cmd-btn:active{border-color:var(--amb);background:var(--ambG)}
-.cmd-lbl{font-size:9px;color:var(--t2);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
-.cmd-val{font-size:11px;color:var(--amb);font-weight:700}
-
-/* ── Players table ── */
-.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--bdr)}
-table{width:100%;border-collapse:collapse;font-size:11px;min-width:320px}
-thead{background:var(--bg2)}
-th{padding:8px 10px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);border-bottom:1px solid var(--bdr)}
-td{padding:8px 10px;border-bottom:1px solid var(--bdr);color:var(--t1)}
-tr:last-child td{border-bottom:none}
-tr:active td{background:var(--bg2)}
-.tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
-.tag-op{background:rgba(245,166,35,.12);color:var(--amb);border:1px solid var(--ambD)}
-.tag-pl{background:rgba(96,165,250,.1);color:var(--blu);border:1px solid var(--bluD)}
-.tag-ad{background:rgba(248,113,113,.1);color:var(--red);border:1px solid var(--redD)}
-
-/* ── File tree ── */
-.ftree{font-size:12px;line-height:2}
-.ft-line{display:flex;align-items:center;gap:6px;padding:1px 4px;border-radius:3px;cursor:pointer;transition:background .1s}
-.ft-line:active{background:var(--bg2)}
-.ft-root{color:var(--amb);font-weight:700}.ft-dir{color:var(--blu)}.ft-file{color:var(--t1)}.ft-ver{color:var(--grn)}
-.ft-i1{padding-left:16px}.ft-i2{padding-left:32px}.ft-i3{padding-left:48px}.ft-i4{padding-left:64px}
-
-/* ── Toggle ── */
-.tog-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bdr)}
-.tog-row:last-child{border-bottom:none}
-.tog-lbl{font-size:12px;color:var(--t1)}.tog-sub{font-size:10px;color:var(--t2);margin-top:2px}
-.tog{width:36px;height:20px;background:var(--bg3);border:1px solid var(--bdr);border-radius:10px;cursor:pointer;position:relative;transition:all .2s;flex-shrink:0}
-.tog.on{background:var(--amb);border-color:var(--amb)}
-.tog::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;background:var(--t2);border-radius:50%;transition:left .2s,background .2s}
-.tog.on::after{left:18px;background:#0a0b0d}
-
-/* ── Alerts ── */
-.alert{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--r);border:1px solid;margin-bottom:8px;font-size:11px}
-.alert:last-child{margin-bottom:0}
-.alert.warn{background:rgba(245,166,35,.05);border-color:var(--ambD)}
-.alert.err{background:rgba(248,113,113,.05);border-color:var(--redD)}
-.alert.ok{background:rgba(74,222,128,.05);border-color:var(--grnD)}
-.alert-ico{font-size:14px;flex-shrink:0;margin-top:1px}
-.alert.warn .alert-ico{color:var(--amb)}.alert.err .alert-ico{color:var(--red)}.alert.ok .alert-ico{color:var(--grn)}
-.alert-title{font-weight:700;color:var(--t0);margin-bottom:2px}
-.alert-body{color:var(--t1);line-height:1.5}
-.alert-time{margin-left:auto;font-size:9px;color:var(--t2);white-space:nowrap;padding-top:1px}
-
-/* ── Path display ── */
-.path-disp{background:#050608;border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;font-size:11px;color:var(--grn);letter-spacing:.3px;line-height:2}
-.path-disp em{color:var(--amb);font-style:normal}
-
-/* ── Form ── */
-.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.form-group:last-child{margin-bottom:0}
-.form-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2)}
-.form-hint{font-size:10px;color:var(--t2);line-height:1.5;margin-top:4px}
-
-/* ── Modal ── */
-.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-ov.open{opacity:1;pointer-events:all}
-.modal{background:var(--bg1);border:1px solid var(--bdrB);border-radius:var(--r2) var(--r2) 0 0;padding:20px;width:100%;max-width:520px;transform:translateY(40px);transition:transform .25s;max-height:85vh;overflow-y:auto}
-.modal-ov.open .modal{transform:translateY(0)}
-.modal-title{font-family:var(--sans);font-size:16px;font-weight:800;color:var(--t0);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
-.modal-close{color:var(--t2);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .12s}
-.modal-close:active{color:var(--red)}
-
-/* ── Toast ── */
-#toasts{position:fixed;top:60px;right:12px;z-index:300;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.toast{background:var(--bg2);border:1px solid var(--bdrB);border-radius:var(--r);padding:9px 14px;font-size:12px;color:var(--t0);display:flex;align-items:center;gap:8px;animation:toastIn .25s ease;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:all;max-width:280px}
-.toast.grn{border-color:var(--grnD)}.toast.amb{border-color:var(--ambD)}.toast.err{border-color:var(--redD)}
-@keyframes toastIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
-
-/* ── Empty state ── */
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:10px;text-align:center;color:var(--t2)}
-.empty-icon{font-size:40px;opacity:.5}
-.empty-title{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--t1)}
-.empty-sub{font-size:11px;line-height:1.6}
-
-/* ── Spinner ── */
-.spin{width:16px;height:16px;border:2px solid var(--bdr);border-top-color:var(--amb);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ── Divider ── */
-.divider{height:1px;background:var(--bdr);margin:4px 0}
-
-/* ═══════════════════════════════════════════════════
-   CREATE SERVER form override
-═══════════════════════════════════════════════════ */
-#view-create .inner{display:flex;flex-direction:column;gap:12px}
-
-/* ═══════════════════════════════════════════════════
-   DESKTOP override — side nav at ≥720px
-═══════════════════════════════════════════════════ */
-@media(min-width:720px){
-  #app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:var(--nav-h) 1fr}
-  #topbar{grid-column:1/-1}
-  #tabbar{display:none}
-  #sidenav{
-    display:flex;flex-direction:column;
-    background:var(--bg1);border-right:1px solid var(--bdr);
-    padding:10px 0;overflow-y:auto;
-  }
-  #content{grid-column:2}
-  .nav-lbl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--t2);padding:8px 12px 4px}
-  .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:4px;margin:0 6px;cursor:pointer;color:var(--t1);font-size:12px;font-weight:500;transition:all .12s;border:1px solid transparent}
-  .nav-item:hover{background:var(--bg2);color:var(--t0)}
-  .nav-item.active{background:var(--ambG);border-color:var(--ambD);color:var(--amb)}
-  .nav-icon{font-size:14px;width:16px;text-align:center;flex-shrink:0}
-  .nav-sep{height:1px;background:var(--bdr);margin:6px 10px}
-  .nav-badge{margin-left:auto;background:var(--grnD);color:var(--grn);font-size:9px;padding:1px 5px;border-radius:2px;font-weight:700}
-  .nav-badge.w{background:var(--redD);color:var(--red)}
-}
-@media(max-width:719px){#sidenav{display:none}}
-
-button:hover{transform:translateY(-1px)}
-@media(min-width:900px){#app{max-width:1600px;margin:auto}}
-</style>
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .quick, .library-tools { grid-template-columns: repeat(2, 1fr); }
+      .hero { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .shell { padding: 14px; }
+      .quick, .library-tools { grid-template-columns: 1fr; }
+      .version, .server { grid-template-columns: 1fr; }
+      .actions { justify-content: stretch; }
+      .actions .btn { flex: 1; }
+      .cmd { display: grid; }
+    }
+  </style>
 </head>
 <body>
-<div id="app">
-
-  <!-- ══ TOP BAR ══ -->
-  <header id="topbar">
-    <div class="logo" onclick="nav('dashboard')" style="cursor:pointer">
-      <div class="logo-px">
-        <span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span>
-      </div>
-      <span>Mine<em>Bolso</em></span>
-    </div>
-    <div class="topbar-mid">
-      <div id="globalPill"><div class="dot dot-off" id="gDot"></div><span id="gText">conectando…</span></div>
-    </div>
-    <button id="btnSettings" onclick="nav('settings')" title="Configurações">⚙</button>
-  </header>
-
-  <!-- ══ SIDE NAV (desktop) ══ -->
-  <nav id="sidenav">
-    <div class="nav-lbl">Principal</div>
-    <div class="nav-item active" data-view="dashboard" onclick="nav('dashboard')"><span class="nav-icon">⬛</span>Dashboard</div>
-    <div class="nav-item" data-view="servers" onclick="nav('servers')"><span class="nav-icon">🗄</span>Servidores<span class="nav-badge" id="snBadge">0</span></div>
-    <div class="nav-item" data-view="create" onclick="nav('create')"><span class="nav-icon">✚</span>Novo Servidor</div>
-    <div class="nav-sep"></div>
-    <div class="nav-lbl">Servidor Ativo</div>
-    <div class="nav-item" data-view="terminal" onclick="nav('terminal')"><span class="nav-icon">▶</span>Terminal</div>
-    <div class="nav-item" data-view="players" onclick="nav('players')"><span class="nav-icon">👥</span>Jogadores<span class="nav-badge" id="snPlayers">0</span></div>
-    <div class="nav-item" data-view="files" onclick="nav('files')"><span class="nav-icon">📁</span>Arquivos</div>
-    <div class="nav-item" data-view="watchdog" onclick="nav('watchdog')"><span class="nav-icon">🐕</span>Watchdog<span class="nav-badge w" id="snAlerts" style="display:none">!</span></div>
-    <div class="nav-sep"></div>
-    <div class="nav-lbl">Rede</div>
-    <div class="nav-item" data-view="tunnel" onclick="nav('tunnel')"><span class="nav-icon">🔗</span>Tunnel</div>
-    <div class="nav-sep"></div>
-    <div class="nav-item" data-view="settings" onclick="nav('settings')"><span class="nav-icon">⚙</span>Configurações</div>
-  </nav>
-
-  <!-- ══ CONTENT ══ -->
-  <main id="content">
-
-    <!-- ─── DASHBOARD ─── -->
-    <div class="view active" id="view-dashboard">
-      <div class="sh">
-        <div><div class="sh-title">Dashboard</div><div class="sh-sub" id="dashSub">Carregando…</div></div>
-        <button class="btn btn-amb btn-sm" onclick="nav('create')">✚ Novo</button>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat grn"><div class="stat-lbl">Online</div><div class="stat-val" id="dOnline">—</div><div class="stat-sub" id="dOnlineSub">servidores</div></div>
-        <div class="stat amb"><div class="stat-lbl">Jogadores</div><div class="stat-val" id="dPlayers">—</div><div class="stat-sub">conectados</div></div>
-        <div class="stat blu"><div class="stat-lbl">RAM host</div><div class="stat-val" id="dRam">—</div><div class="stat-sub" id="dRamSub">total</div></div>
-        <div class="stat red"><div class="stat-lbl">CPU host</div><div class="stat-val" id="dCpu">—</div><div class="stat-sub">% utilização</div></div>
-      </div>
-
-      <!-- Tunnel rápido -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">🔗 Tunnel playit.gg</span><div class="dot" id="tunnelDot" style="width:8px;height:8px"></div></div>
-        <div class="tunnel-box">
-          <span class="tunnel-lbl">Addr</span>
-          <span class="tunnel-addr" id="tunnelAddr">—</span>
-          <button class="copy-btn" onclick="copyTunnel()">⎘</button>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" onclick="nav('tunnel')">Detalhes</button>
-          <button class="btn btn-ghost btn-sm" onclick="apiPost('/api/tunnel/restart').then(()=>toast('↻ Tunnel reiniciando…','amb'))">↻ Novo link</button>
+  <div class="shell">
+    <header class="top">
+      <div class="brand">
+        <div class="cube" aria-hidden="true"></div>
+        <div>
+          <h1>MineBolso <span style="color:var(--green)">2.0</span></h1>
+          <p class="muted">Servidor Minecraft Java plug-and-play pela pasta local .minecraft.</p>
         </div>
       </div>
+      <div class="spacer"></div>
+      <div class="pill"><span id="wsDot" class="dot warn"></span><span id="wsText">conectando</span></div>
+      <button class="btn ghost" id="refreshBtn">Atualizar</button>
+    </header>
 
-      <!-- Perf -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Performance</span><span id="perfAge" style="font-size:9px;color:var(--t2)"></span></div>
-        <div id="perfBars">
-          <div class="perf-item"><div class="perf-row"><span class="perf-name">CPU</span><span class="perf-val" id="pCpuV">—</span></div><div class="perf-track"><div class="perf-fill amb" id="pCpuB" style="width:0%"></div></div></div>
-          <div class="perf-item"><div class="perf-row"><span class="perf-name">RAM (host)</span><span class="perf-val" id="pRamV">—</span></div><div class="perf-track"><div class="perf-fill grn" id="pRamB" style="width:0%"></div></div></div>
-          <div class="perf-item"><div class="perf-row"><span class="perf-name">Disco</span><span class="perf-val" id="pDiskV">—</span></div><div class="perf-track"><div class="perf-fill blu" id="pDiskB" style="width:0%"></div></div></div>
-        </div>
-      </div>
-
-      <!-- Log rápido -->
-      <div class="card" style="padding-bottom:0">
-        <div class="card-hdr"><span class="card-ttl">Log recente</span><button class="btn btn-ghost btn-xs" onclick="nav('terminal')">Terminal →</button></div>
-        <div id="dashLog" style="background:#050608;border-radius:var(--r);padding:8px 10px;font-size:11px;line-height:1.85;max-height:160px;overflow-y:auto;margin-bottom:14px">
-          <span class="td2">Aguardando logs…</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── SERVERS ─── -->
-    <div class="view" id="view-servers">
-      <div class="sh">
-        <div><div class="sh-title">Servidores</div><div class="sh-sub">Versões detectadas em versions/</div></div>
-        <button class="btn btn-amb btn-sm" onclick="nav('create')">✚ Novo</button>
-      </div>
-      <div id="serverList"><div class="empty"><div class="empty-icon">🗄</div><div class="empty-title">Nenhuma versão encontrada</div><div class="empty-sub">Crie uma pasta em<br>~/minebolso/.minecraft/versions/<br>contendo um server.jar</div></div></div>
-    </div>
-
-    <!-- ─── CREATE ─── -->
-    <div class="view" id="view-create">
-      <div class="sh"><div><div class="sh-title">Novo Servidor</div><div class="sh-sub">Configure antes de iniciar</div></div></div>
-
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Básico</span></div>
-        <div class="form-group"><label class="form-lbl">Versão / Pasta</label>
-          <select id="cVersion"><option value="">Selecione…</option></select>
-          <span class="form-hint">Pastas detectadas em versions/ com server.jar</span>
-        </div>
-        <div class="form-group"><label class="form-lbl">Nome amigável</label><input id="cName" type="text" placeholder="MeuServidor"></div>
-        <div class="form-group"><label class="form-lbl">RAM alocada (GB)</label><input id="cRam" type="number" value="1" min="1" max="16" step="0.5"></div>
-        <div class="form-group" style="margin-bottom:0"><label class="form-lbl">JVM flags extras (opcional)</label><input id="cFlags" type="text" placeholder="-XX:+SomeFlag"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Caminho dos arquivos</span></div>
-        <div class="path-disp" id="cPathPreview">
-          ~/minebolso/.minecraft/versions/<em>selecione uma versão</em>/
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Opções</span></div>
-        <div class="tog-row"><div><div class="tog-lbl">Tunnel automático (playit.gg)</div><div class="tog-sub">Gera link público sem VPN</div></div><div class="tog on" id="togTunnel" onclick="this.classList.toggle('on')"></div></div>
-        <div class="tog-row"><div><div class="tog-lbl">Watchdog / Reinício auto</div><div class="tog-sub">Reinicia se crashar</div></div><div class="tog on" id="togWatchdog" onclick="this.classList.toggle('on')"></div></div>
-      </div>
-
-      <button class="btn btn-amb btn-full" id="btnCreate" onclick="createServer()">✚ Salvar e Iniciar</button>
-      <button class="btn btn-ghost btn-full" onclick="nav('servers')" style="margin-top:-4px">Cancelar</button>
-    </div>
-
-    <!-- ─── TERMINAL ─── -->
-    <div class="view" id="view-terminal">
-      <div class="sh">
-        <div><div class="sh-title">Terminal</div><div class="sh-sub" id="termSub">Selecione um servidor</div></div>
-        <button class="btn btn-ghost btn-sm" id="btnClearTerm" onclick="clearTerm()">✕ Limpar</button>
-      </div>
-
-      <div class="card" style="padding-bottom:10px">
-        <div class="card-hdr" style="margin-bottom:8px"><span class="card-ttl">Servidor</span></div>
-        <select id="termServerSel" onchange="subscribeServer(this.value)"><option value="">— selecione —</option></select>
-      </div>
-
-      <div class="card">
-        <div class="card-hdr" style="margin-bottom:8px"><span class="card-ttl">Comandos rápidos</span></div>
-        <div class="cmd-grid">
-          <div class="cmd-btn" onclick="sendQuick('list')"><div class="cmd-lbl">Listar jogadores</div><div class="cmd-val">/list</div></div>
-          <div class="cmd-btn" onclick="sendQuick('save-all')"><div class="cmd-lbl">Salvar mundo</div><div class="cmd-val">/save-all</div></div>
-          <div class="cmd-btn" onclick="sendQuick('time set day')"><div class="cmd-lbl">Setar dia</div><div class="cmd-val">/time set day</div></div>
-          <div class="cmd-btn" onclick="sendQuick('weather clear')"><div class="cmd-lbl">Limpar clima</div><div class="cmd-val">/weather clear</div></div>
-          <div class="cmd-btn" onclick="sendQuick('gamerule keepInventory true')"><div class="cmd-lbl">Keep inventory</div><div class="cmd-val">/gamerule …</div></div>
-          <div class="cmd-btn" onclick="sendQuick('difficulty hard')"><div class="cmd-lbl">Dificuldade hard</div><div class="cmd-val">/difficulty hard</div></div>
-        </div>
-      </div>
-
-      <div id="termWrap">
-        <div class="term-bar">
-          <div class="term-dots"><div class="td td-r"></div><div class="td td-y"></div><div class="td td-g"></div></div>
-          <div class="term-title" id="termTitle">console</div>
-          <div class="dot dot-off" id="termDot" style="width:8px;height:8px"></div>
-        </div>
-        <div id="termOut"><span class="td2">Aguardando conexão…</span></div>
-        <div class="term-input-row">
-          <span class="term-prompt">›</span>
-          <input id="termIn" type="text" placeholder="Digite um comando…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-          <button class="btn btn-amb btn-sm" onclick="sendTermCmd()">↵</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── PLAYERS ─── -->
-    <div class="view" id="view-players">
-      <div class="sh">
-        <div><div class="sh-title">Jogadores</div><div class="sh-sub" id="playersSub">—</div></div>
-        <button class="btn btn-ghost btn-sm" onclick="loadPlayers()">↻</button>
-      </div>
-      <div class="card" style="padding-bottom:10px">
-        <div class="card-hdr" style="margin-bottom:8px"><span class="card-ttl">Servidor</span></div>
-        <select id="playersServerSel" onchange="loadPlayers()"><option value="">— selecione —</option></select>
-      </div>
-      <div id="playersList"><div class="empty"><div class="empty-icon">👥</div><div class="empty-title">Nenhum jogador</div><div class="empty-sub">Selecione um servidor online</div></div></div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Ações em massa</span></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="massCmd('save-all')">💾 Save</button>
-          <button class="btn btn-ghost btn-sm" onclick="massCmd('weather clear')">🌤 Weather</button>
-          <button class="btn btn-ghost btn-sm" onclick="massCmd('time set day')">☀ Day</button>
-          <button class="btn btn-red btn-sm" onclick="openBanModal()">⛔ Banir</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── FILES ─── -->
-    <div class="view" id="view-files">
-      <div class="sh">
-        <div><div class="sh-title">Arquivos</div><div class="sh-sub" id="filePathSub">—</div></div>
-        <button class="btn btn-ghost btn-sm" id="btnFileSave" style="display:none" onclick="saveFile()">💾 Salvar</button>
-      </div>
-      <div class="card" style="padding-bottom:10px">
-        <div class="card-hdr" style="margin-bottom:8px"><span class="card-ttl">Servidor</span></div>
-        <select id="filesServerSel" onchange="loadFileTree(this.value)"><option value="">— selecione —</option></select>
-      </div>
-      <div id="fileTree" class="card"><div class="empty"><div class="empty-icon">📁</div><div class="empty-sub">Selecione um servidor</div></div></div>
-      <div id="fileEditor" style="display:none">
-        <div class="card-hdr" style="margin-bottom:6px"><span class="card-ttl" id="fileEditorName"></span></div>
-        <textarea id="fileContent" style="min-height:300px;resize:vertical;line-height:1.7;font-size:11px" spellcheck="false"></textarea>
-      </div>
-    </div>
-
-    <!-- ─── WATCHDOG ─── -->
-    <div class="view" id="view-watchdog">
-      <div class="sh"><div><div class="sh-title">Watchdog</div><div class="sh-sub">Alertas e monitoramento</div></div></div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Alertas Recentes</span></div>
-        <div id="alertsList"><span class="td2" style="font-size:11px">Nenhum alerta.</span></div>
-      </div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Configurações</span></div>
-        <div class="tog-row"><div><div class="tog-lbl">Reinício automático em crash</div><div class="tog-sub">Reinicia se o processo morrer</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="tog-row"><div><div class="tog-lbl">Alerta de TPS baixo</div><div class="tog-sub">Notifica quando TPS &lt; 15 por 30s</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="tog-row"><div><div class="tog-lbl">Alerta de RAM alta</div><div class="tog-sub">Quando uso &gt; 90% do alocado</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
-        <div class="tog-row"><div><div class="tog-lbl">Backup automático</div><div class="tog-sub">Salva o mundo a cada 6h</div></div><div class="tog" onclick="this.classList.toggle('on')"></div></div>
-      </div>
-    </div>
-
-    <!-- ─── TUNNEL ─── -->
-    <div class="view" id="view-tunnel">
-      <div class="sh"><div><div class="sh-title">Tunnel</div><div class="sh-sub">playit.gg — sem VPN, sem Hamachi</div></div></div>
-
-      <!-- Setup: exibido quando não tem secret configurado -->
-      <div class="card" id="tunnelSetup" style="display:none">
-        <div class="card-hdr"><span class="card-ttl">⚙ Configuração necessária (uma vez só)</span></div>
-        <div style="font-size:12px;color:var(--t1);line-height:1.7;margin-bottom:14px">
-          O playit.gg precisa de um <strong style="color:var(--t0)">secret token</strong> para criar o tunnel.<br>
-          É gratuito e feito uma única vez:
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <span style="color:var(--amb);font-weight:800;min-width:18px">1.</span>
-            <span style="font-size:12px;color:var(--t1)">Crie uma conta gratuita em <a href="https://playit.gg" target="_blank" style="color:var(--amb)">playit.gg</a></span>
+    <main class="grid">
+      <section class="panel">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">novo fluxo simples</div>
+            <h2>Copie para .minecraft, selecione e jogue.</h2>
+            <p class="muted">Forge, NeoForge, Fabric, Quilt, Vanilla e modpacks exportados são detectados automaticamente em <strong>.minecraft/versions</strong>.</p>
           </div>
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <span style="color:var(--amb);font-weight:800;min-width:18px">2.</span>
-            <span style="font-size:12px;color:var(--t1)">No dashboard do playit.gg, vá em <strong style="color:var(--t0)">Agents → Secret Key</strong></span>
+          <button class="btn primary" id="openVersionsBtn">Abrir pasta .minecraft/versions</button>
+        </div>
+
+        <div class="quick">
+          <div class="metric"><b id="mVersions">—</b><span>versões detectadas</span></div>
+          <div class="metric"><b id="mReady">—</b><span>prontas</span></div>
+          <div class="metric"><b id="mOnline">—</b><span>online</span></div>
+          <div class="metric"><b id="mPlayers">—</b><span>jogadores</span></div>
+        </div>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <h3>Biblioteca de Versões</h3>
+              <p class="muted">Tudo dentro de .minecraft/versions aparece aqui com validação amigável.</p>
+            </div>
           </div>
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <span style="color:var(--amb);font-weight:800;min-width:18px">3.</span>
-            <span style="font-size:12px;color:var(--t1)">Cole o secret abaixo e clique em Salvar</span>
+          <div class="library-tools">
+            <button class="btn primary" id="rescanBtn">Reescanear</button>
+            <button class="btn ghost" id="openMinecraftBtn">Abrir .minecraft</button>
+            <button class="btn ghost" id="importBtn">Importar do Launcher</button>
+            <button class="btn ghost" id="openVersionsBtn2">Abrir versions</button>
           </div>
-        </div>
-        <div class="form-group" style="margin-bottom:10px">
-          <label class="form-lbl">Secret Key</label>
-          <input id="tunnelSecretInput" type="password" placeholder="Cole aqui seu secret key do playit.gg">
-        </div>
-        <button class="btn btn-amb btn-full" onclick="saveTunnelSecret()">🔗 Salvar e ativar tunnel</button>
-      </div>
+          <div class="dropzone" id="dropzone">
+            Arraste uma pasta/exportação para lembrar o fluxo: coloque a instalação em <strong>.minecraft/versions</strong>. Para importar automaticamente, use “Importar do Launcher”.
+          </div>
+          <div id="versions" class="version-list"><div class="empty">Carregando biblioteca...</div></div>
+        </section>
 
-      <!-- Status: exibido quando tunnel está configurado -->
-      <div class="card" id="tunnelStatus">
-        <div class="card-hdr"><span class="card-ttl">Endereço público</span><div class="dot dot-off" id="tunnelDot2" style="width:8px;height:8px"></div></div>
-        <div style="font-family:var(--sans);font-size:20px;font-weight:800;color:var(--grn);letter-spacing:-.5px;margin-bottom:6px;word-break:break-all" id="tunnelAddrBig">—</div>
-        <div style="font-size:11px;color:var(--t2);margin-bottom:12px">Compartilhe com seus amigos. Funciona de qualquer rede.</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-amb btn-sm" onclick="copyTunnel()">⎘ Copiar</button>
-          <button class="btn btn-ghost btn-sm" onclick="apiPost('/api/tunnel/start').then(refreshTunnel)">▶ Iniciar</button>
-          <button class="btn btn-ghost btn-sm" onclick="apiPost('/api/tunnel/stop').then(refreshTunnel)">⏹ Parar</button>
-          <button class="btn btn-ghost btn-sm" onclick="apiPost('/api/tunnel/restart').then(()=>toast('↻ Reiniciando…','amb'))">↻ Novo link</button>
-          <button class="btn btn-ghost btn-sm" onclick="resetTunnelSecret()">🔑 Trocar secret</button>
-        </div>
-      </div>
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <h3>Servidores</h3>
+              <p class="muted">Inicie apenas versões válidas. As incompletas mostram orientação antes de quebrar.</p>
+            </div>
+          </div>
+          <div id="servers" class="server-list"><div class="empty">Nenhum servidor carregado.</div></div>
+        </section>
+      </section>
 
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Como funciona</span></div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">🖥</span><div><div style="font-size:12px;font-weight:700;color:var(--t0)">Seu hardware roda o servidor</div><div style="font-size:11px;color:var(--t2)">Java local, sem mensalidade de hosting</div></div></div>
-          <div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">🔗</span><div><div style="font-size:12px;font-weight:700;color:var(--t0)">Tunnel gera IP público</div><div style="font-size:11px;color:var(--t2)">Funciona atrás de qualquer NAT/CGNAT</div></div></div>
-          <div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">👥</span><div><div style="font-size:12px;font-weight:700;color:var(--t0)">Amigos conectam direto</div><div style="font-size:11px;color:var(--t2)">Sem VPN, sem configuração de roteador</div></div></div>
-        </div>
-      </div>
-    </div>
+      <aside class="stack">
+        <section class="panel section">
+          <div class="section-head"><div><h3>Túnel playit</h3><p class="muted" id="tunStatus">verificando...</p></div></div>
+          <div id="tunAddress" class="address">Sem endereço público ainda.</div>
+          <div class="actions">
+            <button class="btn primary" id="copyAddress">Copiar</button>
+            <button class="btn ghost" id="restartTunnel">Reconectar</button>
+          </div>
+          <p class="muted" id="tunHint">Quando o túnel ficar online, copie o endereço e envie aos amigos.</p>
+        </section>
 
-    <!-- ─── SETTINGS ─── -->
-    <div class="view" id="view-settings">
-      <div class="sh"><div><div class="sh-title">Configurações</div><div class="sh-sub">MineBolso v1.0.0</div></div></div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Java</span></div>
-        <div class="form-group"><label class="form-lbl">Caminho do Java</label><input id="cfgJava" type="text" placeholder="java"><span class="form-hint">Deixe "java" se estiver no PATH (padrão Termux)</span></div>
-        <div class="form-group" style="margin-bottom:0"><label class="form-lbl">Diretório base</label><input id="cfgBase" type="text" placeholder="~/minebolso/.minecraft"></div>
-      </div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-ttl">Rede</span></div>
-        <div class="form-group"><label class="form-lbl">Porta do painel (requer reinício)</label><input id="cfgPort" type="number" value="25580"></div>
-        <div class="tog-row"><div><div class="tog-lbl">Iniciar tunnel automaticamente</div></div><div class="tog on" id="cfgAutoTunnel" onclick="this.classList.toggle('on')"></div></div>
-      </div>
-      <button class="btn btn-amb btn-full" onclick="saveSettings()">💾 Salvar configurações</button>
-    </div>
+        <section class="panel section">
+          <div class="section-head"><div><h3>Console seguro</h3><p class="muted" id="consoleHint">Selecione uma versão em execução.</p></div></div>
+          <div id="console" class="console" aria-live="polite"></div>
+          <div class="cmd">
+            <input id="cmdInput" placeholder="say Olá, mundo" disabled>
+            <button class="btn" id="sendCmd" disabled>Enviar</button>
+          </div>
+        </section>
 
-  </main><!-- /content -->
-
-  <!-- ══ BOTTOM TAB BAR (mobile) ══ -->
-  <nav id="tabbar">
-    <div class="tab active" data-tab="dashboard" onclick="nav('dashboard')"><div class="ti">⬛</div>Início</div>
-    <div class="tab" data-tab="servers" onclick="nav('servers')"><div class="ti">🗄</div>Servers<span class="badge" id="tbBadge" style="display:none">0</span></div>
-    <div class="tab" data-tab="terminal" onclick="nav('terminal')"><div class="ti">▶</div>Terminal</div>
-    <div class="tab" data-tab="players" onclick="nav('players')"><div class="ti">👥</div>Players</div>
-    <div class="tab" data-tab="tunnel" onclick="nav('tunnel')"><div class="ti">🔗</div>Tunnel</div>
-  </nav>
-</div>
-
-<!-- ══ MODAL BAN ══ -->
-<div class="modal-ov" id="banModal">
-  <div class="modal">
-    <div class="modal-title">⛔ Banir Jogador<span class="modal-close" onclick="closeModal('banModal')">✕</span></div>
-    <div class="form-group"><label class="form-lbl">Nome do jogador</label><input id="banPlayer" type="text" placeholder="Username"></div>
-    <div class="form-group"><label class="form-lbl">Motivo (opcional)</label><input id="banReason" type="text" placeholder="Motivo…"></div>
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn btn-red" onclick="doBan()">⛔ Confirmar Ban</button>
-      <button class="btn btn-ghost" onclick="closeModal('banModal')">Cancelar</button>
-    </div>
+        <section class="panel section">
+          <div class="section-head"><div><h3>Diagnóstico</h3><p class="muted">Causa provável e próximos passos aparecem aqui.</p></div></div>
+          <div id="alerts" class="server-list"><div class="empty">Nenhum alerta.</div></div>
+        </section>
+      </aside>
+    </main>
   </div>
-</div>
 
-<!-- ══ TOASTS ══ -->
-<div id="toasts"></div>
+  <div class="toast-wrap" id="toasts"></div>
 
-<script>
-// ═══════════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════════
-const S = {
-  servers:        [],       // último fetch
-  activeServer:   null,     // id do servidor selecionado p/ terminal
-  ws:             null,
-  wsReady:        false,
-  alerts:         [],       // watchdog alerts recebidos
-  tunnel:         { running: false, address: null },
-  currentFile:    null,     // { path, content } sendo editado
-  perfAge:        0,
-};
+  <script>
+    const $ = id => document.getElementById(id);
+    const state = { versions: [], servers: [], library: null, tunnel: null, selected: null, alerts: [], ws: null };
 
-// ═══════════════════════════════════════════════════════════════
-// NAVIGATION
-// ═══════════════════════════════════════════════════════════════
-function nav(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-
-  const v = document.getElementById('view-' + id);
-  if (v) v.classList.add('active');
-
-  document.querySelectorAll(`[data-view="${id}"]`).forEach(n => n.classList.add('active'));
-  document.querySelectorAll(`[data-tab="${id}"]`).forEach(t => t.classList.add('active'));
-
-  // Side-effects por view
-  if (id === 'servers')   loadServers();
-  if (id === 'create')    loadVersionsForCreate();
-  if (id === 'terminal')  loadVersionsForTerminal();
-  if (id === 'players')   loadVersionsForPlayers();
-  if (id === 'files')     loadVersionsForFiles();
-  if (id === 'tunnel')    refreshTunnel();
-  if (id === 'settings')  loadSettings();
-  if (id === 'dashboard') refreshDashboard();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// API HELPERS
-// ═══════════════════════════════════════════════════════════════
-async function apiFetch(url) {
-  const r = await fetch(url);
-  return r.json();
-}
-async function apiPost(url, body) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: body ? { 'Content-Type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  return r.json();
-}
-async function apiPatch(url, body) {
-  const r = await fetch(url, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return r.json();
-}
-async function apiPut(url, body) {
-  const r = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return r.json();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// WEBSOCKET
-// ═══════════════════════════════════════════════════════════════
-function connectWS() {
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const ws = new WebSocket(`${proto}://${location.host}/terminal`);
-  S.ws = ws;
-
-  ws.onopen = () => {
-    S.wsReady = true;
-    updateGlobalPill();
-    if (S.activeServer) ws.send(JSON.stringify({ type: 'subscribe', serverId: S.activeServer }));
-    // Reconecta ping a cada 25s
-    ws._ping = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ type: 'ping' })), 25000);
-  };
-
-  ws.onmessage = e => {
-    const msg = JSON.parse(e.data);
-    handleWSMessage(msg);
-  };
-
-  ws.onclose = () => {
-    S.wsReady = false;
-    clearInterval(ws._ping);
-    updateGlobalPill();
-    // Reconnect
-    setTimeout(connectWS, 3000);
-  };
-
-  ws.onerror = () => ws.close();
-}
-
-function handleWSMessage(msg) {
-  switch (msg.type) {
-    case 'log':
-      appendLog(msg.line, msg.level);
-      appendDashLog(msg.line, msg.level);
-      break;
-    case 'status':
-      handleStatus(msg);
-      break;
-    case 'alert':
-      handleAlert(msg);
-      break;
-    case 'pong':
-      break;
-  }
-}
-
-function handleStatus(msg) {
-  // Atualiza estado do servidor na lista local
-  const idx = S.servers.findIndex(s => s.id === msg.serverId);
-  if (idx >= 0) Object.assign(S.servers[idx], msg);
-  updateGlobalPill();
-  if (msg.event === 'join' || msg.event === 'leave') refreshPlayerCount();
-}
-
-function handleAlert(msg) {
-  S.alerts.unshift({ ...msg, ts: Date.now() });
-  if (S.alerts.length > 20) S.alerts.length = 20;
-  renderAlerts();
-  // Badge
-  const el = document.getElementById('snAlerts');
-  if (el) el.style.display = 'inline';
-  toast(`⚠ ${msg.message}`, 'amb');
-}
-
-function wsSubscribe(id) {
-  S.activeServer = id;
-  if (S.ws?.readyState === 1) {
-    S.ws.send(JSON.stringify({ type: 'subscribe', serverId: id }));
-  }
-}
-
-function wsSendCmd(id, cmd) {
-  if (!S.ws || S.ws.readyState !== 1) { toast('WebSocket não conectado', 'err'); return false; }
-  S.ws.send(JSON.stringify({ type: 'command', serverId: id, cmd }));
-  return true;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// DASHBOARD
-// ═══════════════════════════════════════════════════════════════
-async function refreshDashboard() {
-  // Servers
-  const sd = await apiFetch('/api/servers').catch(() => ({ servers: [] }));
-  S.servers = sd.servers || [];
-  const online = S.servers.filter(s => s.running).length;
-  const players = S.servers.reduce((a, s) => a + (s.players?.length || 0), 0);
-
-  $('dOnline').textContent = online;
-  $('dOnlineSub').textContent = `de ${S.servers.length} servidor${S.servers.length !== 1 ? 'es' : ''}`;
-  $('dPlayers').textContent = players;
-  $('dashSub').textContent = online > 0 ? `${online} servidor online` : 'Nenhum servidor online';
-
-  // System
-  const sys = await apiFetch('/api/system').catch(() => ({}));
-  if (sys.system) {
-    const { cpu, ram, disk } = sys.system;
-    $('dCpu').textContent = cpu != null ? cpu + '%' : '—';
-    $('pCpuV').textContent = cpu != null ? cpu + '%' : '—';
-    $('pCpuB').style.width = (cpu || 0) + '%';
-
-    if (ram?.total) {
-      const pct = Math.round((ram.used / ram.total) * 100);
-      const used = fmtBytes(ram.used), total = fmtBytes(ram.total);
-      $('dRam').textContent = fmtBytes(ram.used, 1);
-      $('dRamSub').textContent = `de ${total}`;
-      $('pRamV').textContent = `${used} / ${total}`;
-      $('pRamB').style.width = pct + '%';
+    async function api(path, options = {}) {
+      const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+      const json = await response.json().catch(() => ({ ok: false, error: { message: 'Resposta inválida do aplicativo.' } }));
+      if (!response.ok || !json.ok) throw new Error(json.error?.message || json.error || 'Falha inesperada.');
+      return json;
     }
-    if (disk?.size) {
-      const pct = Math.round((disk.used / disk.size) * 100);
-      $('pDiskV').textContent = `${fmtBytes(disk.used)} / ${fmtBytes(disk.size)}`;
-      $('pDiskB').style.width = pct + '%';
+
+    const post = (path, body) => api(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined });
+    const esc = value => String(value ?? '').replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+    const routeId = id => encodeURIComponent(id);
+
+    async function refresh(force = false) {
+      try {
+        const [versions, servers, tunnel] = await Promise.all([
+          api(`/api/versions${force ? '?force=1' : ''}`),
+          api('/api/servers'),
+          api('/api/tunnel').catch(() => ({})),
+        ]);
+        state.versions = versions.versions || [];
+        state.library = versions.library || null;
+        state.servers = servers.servers || [];
+        state.tunnel = tunnel;
+        render();
+      } catch (error) {
+        toast(error.message, true);
+      }
     }
-    S.perfAge = Date.now();
-    $('perfAge').textContent = 'agora';
-  }
 
-  // Tunnel
-  const td = await apiFetch('/api/tunnel').catch(() => ({}));
-  S.tunnel = td;
-  updateTunnelUI();
-  updateGlobalPill();
-  updateBadges();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SERVERS VIEW
-// ═══════════════════════════════════════════════════════════════
-async function loadServers() {
-  const sd = await apiFetch('/api/servers').catch(() => ({ servers: [] }));
-  S.servers = sd.servers || [];
-  renderServerList();
-  updateBadges();
-}
-
-function renderServerList() {
-  const el = $('serverList');
-  if (!S.servers.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">🗄</div><div class="empty-title">Nenhuma versão</div><div class="empty-sub">Crie ~/minebolso/.minecraft/versions/&lt;versao&gt;/server.jar</div></div>`;
-    return;
-  }
-
-  el.innerHTML = S.servers.map(s => {
-    const statusCls  = s.running ? 'online'  : 'offline';
-    const statusTxt  = s.running ? 'Online'  : 'Offline';
-    const statusDot  = s.running ? 'dot-grn' : 'dot-off';
-    const cardCls    = s.running ? 'running' : '';
-    const ramUsed    = s.ramUsed ? fmtBytes(s.ramUsed) : '—';
-    const tps        = s.tps?.tps1m != null ? s.tps.tps1m.toFixed(1) : '—';
-    const tpsColor   = s.tps?.tps1m < 15 ? 'var(--red)' : s.tps?.tps1m < 18 ? 'var(--amb)' : 'var(--grn)';
-    const typeLabel  = { vanilla: '🌿 Vanilla', modded: '⚙ Modded', plugins: '🔌 Plugins', unknown: '❓ Unknown' }[s.type] || s.type;
-
-    return `<div class="srv-card ${cardCls}">
-      <div class="srv-card-top">
-        <div class="srv-icon">${s.type === 'modded' ? '⚙' : s.type === 'plugins' ? '🔌' : '🌲'}</div>
-        <div style="flex:1;min-width:0">
-          <div class="srv-name">${esc(s.name || s.id)}</div>
-          <div class="srv-version">${esc(s.id)} · ${typeLabel}</div>
-        </div>
-        <div class="srv-status-row ${statusCls}"><div class="dot ${statusDot}"></div>${statusTxt}</div>
-      </div>
-      <div class="srv-meta">
-        <div class="srv-meta-item"><div class="srv-meta-lbl">Jogadores</div><div class="srv-meta-val">${(s.players?.length || 0)} / —</div></div>
-        <div class="srv-meta-item"><div class="srv-meta-lbl">TPS</div><div class="srv-meta-val" style="color:${tpsColor}">${tps}</div></div>
-        <div class="srv-meta-item"><div class="srv-meta-lbl">RAM usada</div><div class="srv-meta-val">${ramUsed}</div></div>
-        <div class="srv-meta-item"><div class="srv-meta-lbl">Uptime</div><div class="srv-meta-val">${fmtUptime(s.uptime)}</div></div>
-      </div>
-      <div class="srv-actions">
-        ${s.running
-          ? `<button class="btn btn-red btn-sm" onclick="serverAction('${s.id}','stop')">⏹ Parar</button>
-             <button class="btn btn-ghost btn-sm" onclick="serverAction('${s.id}','restart')">↻</button>`
-          : `<button class="btn btn-grn btn-sm" onclick="serverAction('${s.id}','start')">▶ Iniciar</button>`}
-        <button class="btn btn-ghost btn-sm" onclick="openTermFor('${s.id}')">▶ Terminal</button>
-        <button class="btn btn-ghost btn-sm" onclick="openFilesFor('${s.id}')">📁</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function serverAction(id, action) {
-  toast(`${action === 'start' ? '▶' : action === 'stop' ? '⏹' : '↻'} ${id}…`, 'amb');
-  const r = await apiPost(`/api/servers/${encodeURIComponent(id)}/${action}`).catch(e => ({ ok: false, error: e.message }));
-  if (!r.ok) { toast(`❌ ${r.error}`, 'err'); return; }
-  toast(`✓ ${action} enviado`, 'grn');
-  setTimeout(loadServers, 1200);
-}
-
-function openTermFor(id) {
-  S.activeServer = id;
-  nav('terminal');
-  subscribeServer(id);
-}
-
-function openFilesFor(id) {
-  nav('files');
-  setTimeout(() => {
-    const sel = $('filesServerSel');
-    if (sel) { sel.value = id; loadFileTree(id); }
-  }, 80);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// CREATE SERVER
-// ═══════════════════════════════════════════════════════════════
-async function loadVersionsForCreate() {
-  const sd = await apiFetch('/api/servers').catch(() => ({ servers: [] }));
-  S.servers = sd.servers || [];
-  const sel = $('cVersion');
-  sel.innerHTML = '<option value="">Selecione…</option>' +
-    S.servers.map(s => `<option value="${esc(s.id)}">${esc(s.id)} ${s.running ? '(online)' : ''}</option>`).join('');
-  updateCreatePathPreview();
-}
-
-$('cVersion') && document.getElementById('cVersion').addEventListener('change', updateCreatePathPreview);
-
-function updateCreatePathPreview() {
-  const v = document.getElementById('cVersion')?.value || '';
-  const el = $('cPathPreview');
-  if (!el) return;
-  el.innerHTML = v
-    ? `~/minebolso/.minecraft/versions/<em>${esc(v)}</em>/server.jar`
-    : `~/minebolso/.minecraft/versions/<em>selecione uma versão</em>/`;
-}
-
-async function createServer() {
-  const id   = $('cVersion').value;
-  const name = $('cName').value.trim() || id;
-  const ram  = parseFloat($('cRam').value) || 1;
-  const flags = $('cFlags').value.trim();
-
-  if (!id) { toast('Selecione uma versão', 'err'); return; }
-
-  $('btnCreate').disabled = true;
-  $('btnCreate').textContent = '⏳ Salvando…';
-
-  // Salva config
-  await apiPatch(`/api/servers/${encodeURIComponent(id)}`, { name, ram, javaFlags: flags }).catch(() => {});
-
-  // Inicia
-  const r = await apiPost(`/api/servers/${encodeURIComponent(id)}/start`).catch(e => ({ ok: false, error: e.message }));
-
-  $('btnCreate').disabled = false;
-  $('btnCreate').textContent = '✚ Salvar e Iniciar';
-
-  if (!r.ok) { toast(`❌ ${r.error}`, 'err'); return; }
-
-  toast(`▶ ${name} iniciando…`, 'grn');
-  wsSubscribe(id);
-  nav('terminal');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// TERMINAL
-// ═══════════════════════════════════════════════════════════════
-async function loadVersionsForTerminal() {
-  const sd = await apiFetch('/api/servers').catch(() => ({ servers: [] }));
-  S.servers = sd.servers || [];
-  const sel = $('termServerSel');
-  sel.innerHTML = '<option value="">— selecione —</option>' +
-    S.servers.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)} ${s.running ? '●' : '○'}</option>`).join('');
-  if (S.activeServer) {
-    sel.value = S.activeServer;
-    subscribeServer(S.activeServer);
-  }
-}
-
-function subscribeServer(id) {
-  if (!id) return;
-  S.activeServer = id;
-  clearTerm();
-  wsSubscribe(id);
-  const srv = S.servers.find(s => s.id === id);
-  $('termSub').textContent = srv ? (srv.name || srv.id) : id;
-  $('termTitle').textContent = id;
-  const dot = $('termDot');
-  if (dot) {
-    dot.className = 'dot ' + (srv?.running ? 'dot-grn' : 'dot-off');
-    dot.style.cssText = 'width:8px;height:8px';
-  }
-}
-
-function appendLog(line, level) {
-  const out = $('termOut');
-  if (!out) return;
-
-  // Limpa placeholder inicial
-  if (out.querySelector('.td2') && !out.dataset.hasLog) {
-    out.innerHTML = '';
-    out.dataset.hasLog = '1';
-  }
-
-  const cls = { INFO:'ti', WARN:'tw', ERROR:'te', FATAL:'te', CMD:'tcmd', RAW:'tw2' }[level] || 'tw2';
-  const span = document.createElement('span');
-  span.className = 'tl ' + cls;
-  span.textContent = line;
-  out.appendChild(span);
-  out.appendChild(document.createElement('br'));
-
-  // Mantém no máximo 400 linhas
-  while (out.childElementCount > 820) out.removeChild(out.firstChild);
-  out.scrollTop = out.scrollHeight;
-}
-
-function appendDashLog(line, level) {
-  const out = $('dashLog');
-  if (!out || !S.activeServer) return;
-  if (out.querySelector('.td2') && !out.dataset.hasLog) {
-    out.innerHTML = '';
-    out.dataset.hasLog = '1';
-  }
-  const cls = { INFO:'ti', WARN:'tw', ERROR:'te', FATAL:'te', CMD:'tcmd', RAW:'tw2' }[level] || 'tw2';
-  const span = document.createElement('span');
-  span.className = 'tl ' + cls;
-  span.textContent = line;
-  out.appendChild(span);
-  out.appendChild(document.createElement('br'));
-  while (out.childElementCount > 60) out.removeChild(out.firstChild);
-  out.scrollTop = out.scrollHeight;
-}
-
-function sendTermCmd() {
-  const input = $('termIn');
-  const cmd   = input.value.trim();
-  if (!cmd) return;
-  if (!S.activeServer) { toast('Selecione um servidor', 'err'); return; }
-  const sent = wsSendCmd(S.activeServer, cmd);
-  if (sent) input.value = '';
-}
-
-function sendQuick(cmd) {
-  if (!S.activeServer) { toast('Selecione um servidor no Terminal', 'err'); nav('terminal'); return; }
-  wsSendCmd(S.activeServer, cmd);
-  toast(`⬛ /${cmd}`, 'grn');
-}
-
-function massCmd(cmd) {
-  const sel = $('playersServerSel');
-  const id  = sel?.value || S.activeServer;
-  if (!id) { toast('Selecione um servidor', 'err'); return; }
-  wsSendCmd(id, cmd);
-  toast(`✓ ${cmd}`, 'grn');
-}
-
-function clearTerm() {
-  const out = $('termOut');
-  if (out) { out.innerHTML = '<span class="td2">Terminal limpo.</span>'; out.dataset.hasLog = ''; }
-}
-
-// Enter no input
-document.addEventListener('DOMContentLoaded', () => {
-  $('termIn').addEventListener('keydown', e => { if (e.key === 'Enter') sendTermCmd(); });
-});
-
-// ═══════════════════════════════════════════════════════════════
-// PLAYERS
-// ═══════════════════════════════════════════════════════════════
-async function loadVersionsForPlayers() {
-  const sd = await apiFetch('/api/servers').catch(() => ({ servers: [] }));
-  S.servers = sd.servers || [];
-  const sel = $('playersServerSel');
-  sel.innerHTML = '<option value="">— selecione —</option>' +
-    S.servers.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)} ${s.running ? '●' : '○'}</option>`).join('');
-  if (S.activeServer) { sel.value = S.activeServer; loadPlayers(); }
-}
-
-async function loadPlayers() {
-  const id = $('playersServerSel').value;
-  if (!id) return;
-  const r = await apiFetch(`/api/players/${encodeURIComponent(id)}`).catch(() => ({ players: [] }));
-  const players = r.players || [];
-  $('playersSub').textContent = `${players.length} conectado${players.length !== 1 ? 's' : ''}`;
-
-  const el = $('playersList');
-  if (!players.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div class="empty-title">Nenhum jogador online</div></div>`;
-    return;
-  }
-
-  el.innerHTML = `<div class="tbl-wrap"><table>
-    <thead><tr><th>Jogador</th><th>Ações</th></tr></thead>
-    <tbody>
-      ${players.map(p => `<tr>
-        <td style="color:var(--t0);font-weight:600">${esc(p)}</td>
-        <td style="display:flex;gap:5px">
-          <button class="btn btn-ghost btn-xs" onclick="playerAction('${esc(id)}','kick','${esc(p)}')">👢 Kick</button>
-          <button class="btn btn-ghost btn-xs" onclick="playerAction('${esc(id)}','op','${esc(p)}')">⚡ OP</button>
-        </td>
-      </tr>`).join('')}
-    </tbody>
-  </table></div>`;
-}
-
-async function playerAction(serverId, action, player) {
-  const r = await apiPost(`/api/players/${encodeURIComponent(serverId)}/${action}`, { player }).catch(e => ({ ok: false, error: e.message }));
-  if (!r.ok) { toast(`❌ ${r.error}`, 'err'); return; }
-  toast(`✓ ${action} → ${player}`, 'grn');
-  setTimeout(loadPlayers, 800);
-}
-
-function openBanModal() { document.getElementById('banModal').classList.add('open'); }
-
-async function doBan() {
-  const player = $('banPlayer').value.trim();
-  const reason = $('banReason').value.trim();
-  if (!player) { toast('Nome do jogador obrigatório', 'err'); return; }
-  const id = $('playersServerSel').value || S.activeServer;
-  if (!id) { toast('Nenhum servidor selecionado', 'err'); return; }
-  const r = await apiPost(`/api/players/${encodeURIComponent(id)}/ban`, { player, reason }).catch(e => ({ ok: false, error: e.message }));
-  closeModal('banModal');
-  if (!r.ok) { toast(`❌ ${r.error}`, 'err'); return; }
-  toast(`⛔ ${player} banido`, 'amb');
-}
-
-function refreshPlayerCount() {
-  const total = S.servers.reduce((a, s) => a + (s.players?.length || 0), 0);
-  $('snPlayers') && ($('snPlayers').textContent = total);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// FILE MANAGER
-// ═══════════════════════════════════════════════════════════════
-async function loadVersionsForFiles() {
-  const sd = await apiFetch('/api/servers').catch(() => ({ servers: [] }));
-  S.servers = sd.servers || [];
-  const sel = $('filesServerSel');
-  sel.innerHTML = '<option value="">— selecione —</option>' +
-    S.servers.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)}</option>`).join('');
-}
-
-async function loadFileTree(serverId) {
-  if (!serverId) return;
-  const r = await apiFetch(`/api/files?serverId=${encodeURIComponent(serverId)}`).catch(() => null);
-  if (!r?.ok) { toast('Erro ao ler arquivos', 'err'); return; }
-
-  $('filePathSub').textContent = serverId + '/';
-  $('fileEditor').style.display = 'none';
-  $('btnFileSave').style.display = 'none';
-  S.currentFile = null;
-
-  const entries = r.entries || [];
-  const tree = document.getElementById('fileTree');
-
-  const treeLines = entries.map(e => {
-    const icon = e.isDir ? '📂' : (e.name.endsWith('.jar') ? '🗄' : '📄');
-    const sz   = e.size != null ? ` <span style="color:var(--t2);font-size:9px">${fmtBytes(e.size)}</span>` : '';
-    return `<div class="ft-line" onclick="openFileEntry('${esc(serverId)}','${esc(e.name)}',${e.isDir})">
-      <span>${icon}</span><span class="${e.isDir ? 'ft-dir' : 'ft-file'}">${esc(e.name)}</span>${sz}
-    </div>`;
-  }).join('');
-
-  tree.innerHTML = `<div class="card-hdr"><span class="card-ttl">📁 ${esc(serverId)}/</span></div>
-    <div class="ftree">${treeLines || '<span class="td2" style="font-size:11px">Pasta vazia</span>'}</div>`;
-}
-
-async function openFileEntry(serverId, name, isDir) {
-  if (isDir) { toast('Pastas — use o servidor para gerenciar subpastas', 'amb'); return; }
-
-  const path = `${serverId}/${name}`;
-  const r = await apiFetch(`/api/files?serverId=${encodeURIComponent(serverId)}&path=${encodeURIComponent(name)}`).catch(() => null);
-
-  if (!r?.ok) { toast(r?.error || 'Não é possível abrir este arquivo', 'err'); return; }
-
-  S.currentFile = { path, content: r.content };
-  $('fileEditorName').textContent = name;
-  $('fileContent').value = r.content;
-  $('fileEditor').style.display = 'block';
-  $('btnFileSave').style.display = 'inline-flex';
-  $('filePathSub').textContent = path;
-
-  // Scroll até o editor
-  $('fileEditor').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-async function saveFile() {
-  if (!S.currentFile) return;
-  const content = $('fileContent').value;
-  const r = await apiPut('/api/files', { filePath: S.currentFile.path, content }).catch(e => ({ ok: false, error: e.message }));
-  if (!r.ok) { toast(`❌ ${r.error}`, 'err'); return; }
-  S.currentFile.content = content;
-  toast('💾 Arquivo salvo', 'grn');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// TUNNEL
-// ═══════════════════════════════════════════════════════════════
-async function refreshTunnel() {
-  const r = await apiFetch('/api/tunnel').catch(() => ({}));
-  S.tunnel = r;
-  updateTunnelUI();
-}
-
-function updateTunnelUI() {
-  const addr      = S.tunnel.address || '—';
-  const running   = S.tunnel.running;
-  const hasSecret = S.tunnel.hasSecret;
-
-  // Mostra setup ou status dependendo se tem secret
-  const setup  = $('tunnelSetup');
-  const status = $('tunnelStatus');
-  if (setup && status) {
-    setup.style.display  = hasSecret ? 'none'  : 'block';
-    status.style.display = hasSecret ? 'block' : 'none';
-  }
-
-  [$('tunnelAddr'), $('tunnelAddrBig')].forEach(el => { if (el) el.textContent = addr; });
-
-  [$('tunnelDot'), $('tunnelDot2')].forEach(el => {
-    if (!el) return;
-    el.className = 'dot ' + (running ? 'dot-grn' : 'dot-off');
-    el.style.cssText = 'width:8px;height:8px';
-  });
-}
-
-async function saveTunnelSecret() {
-  const key = $('tunnelSecretInput').value.trim();
-  if (!key || key.length < 10) { toast('Secret inválido', 'err'); return; }
-  const r = await apiPost('/api/tunnel/secret', { secretKey: key }).catch(e => ({ ok: false, error: e.message }));
-  if (!r.ok) { toast('❌ ' + r.error, 'err'); return; }
-  toast('✅ Secret salvo! Tunnel iniciando…', 'grn');
-  $('tunnelSecretInput').value = '';
-  setTimeout(refreshTunnel, 2000);
-}
-
-function resetTunnelSecret() {
-  S.tunnel.hasSecret = false;
-  updateTunnelUI();
-}
-
-function copyTunnel() {
-  const addr = S.tunnel.address;
-  if (!addr || addr === '—') { toast('Tunnel não está ativo', 'err'); return; }
-  navigator.clipboard?.writeText(addr).catch(() => {});
-  toast(`⎘ ${addr}`, 'grn');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SETTINGS
-// ═══════════════════════════════════════════════════════════════
-async function loadSettings() {
-  const r = await apiFetch('/api/config').catch(() => ({}));
-  if (!r.config) return;
-  $('cfgJava').value = r.config.javaPath || 'java';
-  $('cfgBase').value = r.config.baseDir  || '';
-  $('cfgPort').value = r.config.port     || 25580;
-  const at = $('cfgAutoTunnel');
-  if (at) { at.classList.toggle('on', !!r.config.autoTunnel); }
-}
-
-async function saveSettings() {
-  const body = {
-    javaPath:   $('cfgJava').value.trim(),
-    baseDir:    $('cfgBase').value.trim(),
-    port:       parseInt($('cfgPort').value) || 25580,
-    autoTunnel: $('cfgAutoTunnel').classList.contains('on'),
-  };
-  const r = await apiPatch('/api/config', body).catch(e => ({ ok: false, error: e.message }));
-  if (!r.ok) { toast(`❌ ${r.error}`, 'err'); return; }
-  toast('💾 Configurações salvas', 'grn');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// WATCHDOG ALERTS
-// ═══════════════════════════════════════════════════════════════
-function renderAlerts() {
-  const el = $('alertsList');
-  if (!el) return;
-  if (!S.alerts.length) { el.innerHTML = '<span class="td2" style="font-size:11px">Nenhum alerta.</span>'; return; }
-  el.innerHTML = S.alerts.map(a => {
-    const cls  = a.alertType === 'crash' || a.alertType === 'restart_failed' ? 'err' : 'warn';
-    const ico  = cls === 'err' ? '🔴' : '⚠';
-    const ago  = fmtAgo(a.ts);
-    return `<div class="alert ${cls}">
-      <span class="alert-ico">${ico}</span>
-      <div><div class="alert-title">${esc(a.alertType)}</div><div class="alert-body">${esc(a.message)}</div></div>
-      <span class="alert-time">${ago}</span>
-    </div>`;
-  }).join('');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// GLOBAL PILL / BADGES
-// ═══════════════════════════════════════════════════════════════
-function updateGlobalPill() {
-  const online = S.servers.filter(s => s.running).length;
-  const dot    = $('gDot');
-  const txt    = $('gText');
-  if (!dot || !txt) return;
-
-  if (!S.wsReady) {
-    dot.className = 'dot dot-amb'; txt.textContent = 'reconectando…'; return;
-  }
-  if (online > 0) {
-    dot.className = 'dot dot-grn';
-    txt.textContent = `${online} servidor${online > 1 ? 'es' : ''} online`;
-  } else {
-    dot.className = 'dot dot-off';
-    txt.textContent = 'nenhum servidor online';
-  }
-}
-
-function updateBadges() {
-  const n = S.servers.length;
-  [$('snBadge'), $('tbBadge')].forEach(el => {
-    if (!el) return;
-    el.textContent = n;
-    el.style.display = n > 0 ? 'inline' : 'none';
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MODAL / TOAST
-// ═══════════════════════════════════════════════════════════════
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.querySelectorAll('.modal-ov').forEach(ov => {
-  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
-});
-
-function toast(msg, type = 'grn') {
-  const c = $('toasts');
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => {
-    t.style.cssText = 'opacity:0;transform:translateX(20px);transition:all .3s';
-    setTimeout(() => t.remove(), 320);
-  }, 3000);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════════════════════
-const $ = id => document.getElementById(id);
-
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function fmtBytes(b, decimals = 0) {
-  if (!b) return '0 B';
-  const k = 1024, d = Math.max(0, decimals);
-  const i = Math.floor(Math.log(b) / Math.log(k));
-  return parseFloat((b / Math.pow(k, i)).toFixed(d)) + ' ' + ['B','KB','MB','GB','TB'][i];
-}
-
-function fmtUptime(s) {
-  if (!s) return '—';
-  if (s < 60)   return s + 's';
-  if (s < 3600) return Math.floor(s / 60) + 'm';
-  return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
-}
-
-function fmtAgo(ts) {
-  const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60)   return 'agora';
-  if (s < 3600) return `${Math.floor(s / 60)}min atrás`;
-  return `${Math.floor(s / 3600)}h atrás`;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  connectWS();
-  refreshDashboard();
-
-  // Polling leve de system stats a cada 15s
-  setInterval(() => {
-    const activeView = document.querySelector('.view.active');
-    if (activeView?.id === 'view-dashboard') refreshDashboard();
-  }, 15_000);
-
-  // Polling de tunnel a cada 10s
-  setInterval(async () => {
-    const r = await apiFetch('/api/tunnel').catch(() => null);
-    if (r) { S.tunnel = r; updateTunnelUI(); }
-  }, 10_000);
-});
-</script>
+    function render() {
+      const online = state.servers.filter(server => server.running).length;
+      const players = state.servers.reduce((count, server) => count + (server.players?.length || 0), 0);
+      $('mVersions').textContent = state.library?.total ?? state.versions.length;
+      $('mReady').textContent = state.library?.ready ?? state.versions.filter(v => v.integrity?.status === 'ok').length;
+      $('mOnline').textContent = online;
+      $('mPlayers').textContent = players;
+      renderVersions();
+      renderServers();
+      renderTunnel();
+      renderAlerts();
+    }
+
+    function renderVersions() {
+      const box = $('versions');
+      if (!state.versions.length) {
+        box.innerHTML = '<div class="empty"><b>Nenhuma versão detectada.</b><br>Copie uma pasta para .minecraft/versions ou importe uma instalação existente.</div>';
+        return;
+      }
+
+      box.innerHTML = state.versions.map(version => {
+        const status = version.integrity?.status || 'broken';
+        const issues = [...(version.integrity?.issues || []), ...(version.integrity?.hints || [])].slice(0, 2).join(' ');
+        return `
+          <article class="version ${status}">
+            <div>
+              <div class="title-row">
+                <h4>${statusIcon(status)} ${esc(version.name)}</h4>
+                <span class="badge ${status}">${esc(version.integrity?.label || 'Indefinida')}</span>
+                <span class="badge">${esc(version.loader)}</span>
+                <span class="badge">MC ${esc(version.minecraftVersion)}</span>
+                <span class="badge">${version.modCount || 0} mods</span>
+              </div>
+              <p class="message">${esc(issues || version.integrity?.message || 'Versão analisada.')}</p>
+            </div>
+            <div class="actions">
+              <button class="btn ghost" data-select="${esc(version.id)}">Selecionar</button>
+              <button class="btn primary" data-start="${esc(version.id)}" ${version.available ? '' : 'disabled'}>Iniciar</button>
+            </div>
+          </article>`;
+      }).join('');
+    }
+
+    function renderServers() {
+      const box = $('servers');
+      if (!state.servers.length) {
+        box.innerHTML = '<div class="empty">Nenhum servidor disponível. A biblioteca acima mostrará o que precisa ser corrigido.</div>';
+        return;
+      }
+
+      box.innerHTML = state.servers.map(server => `
+        <article class="server ${server.running ? 'online' : ''}">
+          <div>
+            <div class="title-row">
+              <h4>${esc(server.name)}</h4>
+              <span class="badge ${server.running ? 'ok' : ''}">${server.running ? (server.ready ? 'online' : 'iniciando') : 'offline'}</span>
+              <span class="badge">${esc(server.loader || server.type)}</span>
+              <span class="badge">${server.ram}GB RAM</span>
+              <span class="badge">${server.players?.length || 0} jogadores</span>
+            </div>
+            <p class="message">${esc(server.integrity?.message || 'Pronto para usar.')}</p>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" data-select="${esc(server.id)}">Console</button>
+            ${server.running
+              ? `<button class="btn" data-restart="${esc(server.id)}">Reiniciar</button><button class="btn danger" data-stop="${esc(server.id)}">Parar</button>`
+              : `<button class="btn primary" data-start="${esc(server.id)}" ${server.available ? '' : 'disabled'}>Iniciar</button>`}
+          </div>
+        </article>`).join('');
+    }
+
+    function renderTunnel() {
+      const tunnel = state.tunnel || {};
+      $('tunStatus').textContent = tunnel.status || 'offline';
+      $('tunAddress').textContent = tunnel.address || tunnel.claimUrl || 'Sem endereço público ainda.';
+      $('tunHint').textContent = tunnel.address
+        ? 'Compartilhe este endereço com seus amigos no Minecraft Java.'
+        : tunnel.claimUrl
+          ? 'Abra o link acima para vincular o agente playit.'
+          : 'Clique em Reconectar para iniciar o túnel automático.';
+    }
+
+    function renderAlerts() {
+      $('alerts').innerHTML = state.alerts.length
+        ? state.alerts.slice(0, 5).map(alert => `<div class="server"><div><h4>${esc(alert.alertType || alert.type)}</h4><p class="message">${esc(alert.message)}</p></div></div>`).join('')
+        : '<div class="empty">Nenhum alerta.</div>';
+    }
+
+    function statusIcon(status) {
+      return status === 'ok' ? '✓' : status === 'warning' ? '⚠' : '✕';
+    }
+
+    function selectServer(id) {
+      state.selected = id;
+      $('consoleHint').textContent = `Console de ${id}`;
+      $('cmdInput').disabled = false;
+      $('sendCmd').disabled = false;
+      $('console').innerHTML = '';
+      if (state.ws?.readyState === WebSocket.OPEN) state.ws.send(JSON.stringify({ type: 'subscribe', serverId: id }));
+    }
+
+    async function serverAction(id, action) {
+      try {
+        await post(`/api/servers/${routeId(id)}/${action}`);
+        toast('Ação enviada.');
+        setTimeout(() => refresh(true), 500);
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+
+    async function sendCommand() {
+      const command = $('cmdInput').value.trim();
+      if (!state.selected || !command) return;
+      try {
+        await post(`/api/servers/${routeId(state.selected)}/command`, { cmd: command });
+        $('cmdInput').value = '';
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${location.host}/terminal`);
+      state.ws = ws;
+      ws.onopen = () => {
+        $('wsDot').className = 'dot ok';
+        $('wsText').textContent = 'tempo real ativo';
+        if (state.selected) ws.send(JSON.stringify({ type: 'subscribe', serverId: state.selected }));
+      };
+      ws.onclose = () => {
+        $('wsDot').className = 'dot warn';
+        $('wsText').textContent = 'reconectando';
+        setTimeout(connectWS, 1800);
+      };
+      ws.onmessage = event => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'log') addLog(message);
+        if (message.type === 'status' || message.type === 'library') refresh(true);
+        if (message.type === 'alert') { state.alerts.unshift({ ...message, ts: Date.now() }); renderAlerts(); }
+        if (message.type === 'tunnel') { state.tunnel = message; renderTunnel(); }
+      };
+    }
+
+    function addLog(message) {
+      if (message.serverId !== state.selected) return;
+      const line = document.createElement('div');
+      line.className = `log ${String(message.level || '').toLowerCase()}`;
+      line.textContent = message.line;
+      $('console').append(line);
+      $('console').scrollTop = $('console').scrollHeight;
+    }
+
+    function toast(message, isError = false) {
+      const item = document.createElement('div');
+      item.className = `toast ${isError ? 'err' : ''}`;
+      item.textContent = message;
+      $('toasts').append(item);
+      setTimeout(() => item.remove(), 3600);
+    }
+
+    document.addEventListener('click', event => {
+      const target = event.target;
+      const id = target.dataset?.select || target.dataset?.start || target.dataset?.stop || target.dataset?.restart;
+      if (target.dataset?.select) selectServer(id);
+      if (target.dataset?.start) serverAction(id, 'start');
+      if (target.dataset?.stop) serverAction(id, 'stop');
+      if (target.dataset?.restart) serverAction(id, 'restart');
+    });
+
+    $('refreshBtn').onclick = () => refresh(true);
+    $('rescanBtn').onclick = async () => { await post('/api/versions/rescan'); toast('Biblioteca reescaneada.'); refresh(true); };
+    $('openMinecraftBtn').onclick = () => post('/api/minecraft/open', { target: 'base' }).catch(error => toast(error.message, true));
+    $('openVersionsBtn').onclick = $('openVersionsBtn2').onclick = () => post('/api/minecraft/open', { target: 'versions' }).catch(error => toast(error.message, true));
+    $('importBtn').onclick = async () => {
+      const sourcePath = prompt('Cole o caminho da instalação existente (.minecraft, Prism, MultiMC, CurseForge ou Modrinth):');
+      if (!sourcePath) return;
+      try {
+        const result = await post('/api/versions/import', { sourcePath });
+        toast(`${result.import.imported.length} instalação(ões) importada(s).`);
+        refresh(true);
+      } catch (error) { toast(error.message, true); }
+    };
+    $('restartTunnel').onclick = () => post('/api/tunnel/restart').then(() => toast('Reconectando túnel.')).catch(error => toast(error.message, true));
+    $('copyAddress').onclick = () => {
+      const value = state.tunnel?.address || state.tunnel?.claimUrl;
+      if (!value) return toast('Nenhum endereço para copiar.', true);
+      navigator.clipboard?.writeText(value);
+      toast('Copiado!');
+    };
+    $('sendCmd').onclick = sendCommand;
+    $('cmdInput').onkeydown = event => { if (event.key === 'Enter') sendCommand(); };
+
+    const dropzone = $('dropzone');
+    ['dragenter', 'dragover'].forEach(name => dropzone.addEventListener(name, event => { event.preventDefault(); dropzone.classList.add('active'); }));
+    ['dragleave', 'drop'].forEach(name => dropzone.addEventListener(name, event => { event.preventDefault(); dropzone.classList.remove('active'); }));
+    dropzone.addEventListener('drop', () => toast('Por segurança do navegador, use Abrir Pasta ou Importar do Launcher para copiar automaticamente.'));
+
+    connectWS();
+    refresh(true);
+    setInterval(refresh, 15_000);
+  </script>
 </body>
 </html>
