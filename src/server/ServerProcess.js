@@ -47,21 +47,28 @@ class ServerProcess extends EventEmitter {
     const ram      = this.cfg.ram || 1;          // GB
     const extraFlags = this.cfg.javaFlags || '';
 
-    if (!fs.existsSync(this.meta.jarPath)) {
-      throw userError('server.jar não encontrado.', {
+    const launch = this.meta.launch || { type: 'jar', jarPath: this.meta.jarPath };
+    if (launch.type === 'jar' && !fs.existsSync(launch.jarPath)) {
+      throw userError('Arquivo de servidor não encontrado.', {
         statusCode: 404,
         code: 'SERVER_JAR_NOT_FOUND',
-        suggestion: 'Coloque o arquivo server.jar na pasta do servidor e tente novamente.',
+        suggestion: 'Copie novamente a pasta para .minecraft/versions e tente de novo.',
+      });
+    }
+    if (launch.type === 'script' && !fs.existsSync(launch.scriptPath)) {
+      throw userError('Script de inicialização não encontrado.', {
+        statusCode: 404,
+        code: 'SERVER_SCRIPT_NOT_FOUND',
+        suggestion: 'Copie novamente a pasta para .minecraft/versions e tente de novo.',
       });
     }
 
     // Aceita EULA automaticamente — grava arquivo se não existir
     this._ensureEula();
 
-    const flags = [
+    const baseFlags = [
       `-Xms${ram}G`,
       `-Xmx${ram}G`,
-      // Flags G1GC recomendadas, leves o suficiente pra Android
       '-XX:+UseG1GC',
       '-XX:+ParallelRefProcEnabled',
       '-XX:MaxGCPauseMillis=200',
@@ -77,14 +84,28 @@ class ServerProcess extends EventEmitter {
       '-XX:+PerfDisableSharedMem',
       '-XX:MaxTenuringThreshold=1',
       ...(extraFlags ? extraFlags.split(/\s+/).filter(Boolean).slice(0, 40) : []),
-      '-jar', this.meta.jarPath,
-      '--nogui',
     ];
 
-    this.proc = spawn(javaPath, flags, {
-      cwd:   this.meta.dir,
+    let command = javaPath;
+    let args = [...baseFlags, '-jar', launch.jarPath, '--nogui'];
+    const env = { ...process.env, JAVA_TOOL_OPTIONS: '', MINEBOLSO_JAVA: javaPath, MINEBOLSO_XMS: `${ram}G`, MINEBOLSO_XMX: `${ram}G` };
+
+    if (launch.type === 'script') {
+      if (process.platform === 'win32' && /\.(bat|cmd)$/i.test(launch.scriptPath)) {
+        command = 'cmd.exe';
+        args = ['/c', launch.scriptPath];
+      } else {
+        try { fs.chmodSync(launch.scriptPath, 0o755); } catch {}
+        command = 'sh';
+        args = [launch.scriptPath];
+      }
+      this.emit('log', { line: `[MineBolso] Usando script de inicialização: ${path.basename(launch.scriptPath)}`, level: 'INFO' });
+    }
+
+    this.proc = spawn(command, args, {
+      cwd: this.meta.dir,
       stdio: ['pipe', 'pipe', 'pipe'],
-      env:   { ...process.env, JAVA_TOOL_OPTIONS: '' },
+      env,
     });
 
     this.pid = this.proc.pid;

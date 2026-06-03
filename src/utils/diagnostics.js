@@ -2,10 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const { DATA_DIR, ensureDirs } = require('../config');
+const { LOG_DIR, ensureDirs } = require('../config');
 
 const LEVELS = new Set(['debug', 'info', 'warn', 'error']);
-const LOG_FILE = path.join(DATA_DIR, 'minebolso.log');
+const LOG_FILE = path.join(LOG_DIR, 'minebolso.log');
 
 function serializeMeta(meta = {}) {
   const safe = {};

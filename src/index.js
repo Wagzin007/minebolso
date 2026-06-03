@@ -9,6 +9,7 @@ const playit   = require('./tunnel/PlayitManager');
 const Watchdog = require('./watchdog/Watchdog');
 const TerminalSocket = require('./ws/TerminalSocket');
 const apiRoutes = require('./api/routes');
+const scanner = require('./server/ServerScanner');
 const { log } = require('./utils/diagnostics');
 
 // ── Bootstrap ──────────────────────────────────────────────────────
@@ -39,6 +40,12 @@ async function main() {
 
   // ── WebSocket Terminal ──
   new TerminalSocket(server, manager, playit);
+
+  // ── Biblioteca .minecraft ──
+  scanner.startWatcher(() => {
+    manager.invalidateScan?.();
+    manager.emit('library', { event: 'changed', library: scanner.getLibraryStatus() });
+  });
 
   // ── Watchdog ──
   const watchdog = new Watchdog(manager);
@@ -87,6 +94,7 @@ async function main() {
   const shutdown = (sig) => {
     console.log(`\n[MineBolso] ${sig} recebido — encerrando...`);
     watchdog.stop();
+    scanner.stopWatcher();
     playit.stop();
 
     // Para todos os servidores ativos

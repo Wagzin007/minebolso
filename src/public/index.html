@@ -1,53 +1,449 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#07130d">
-<title>MineBolso 2.0</title>
-<style>
-:root{color-scheme:dark;--bg:#07130d;--panel:#0d1b13cc;--panel2:#13251a;--card:#102019;--line:#244132;--line2:#35654b;--text:#f3fff6;--muted:#a7b9ad;--soft:#6f8376;--green:#58f28a;--green2:#23c563;--amber:#ffd166;--red:#ff6b6b;--blue:#76c7ff;--shadow:0 24px 80px #0008;--r:24px;--r2:16px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 12% -10%,#2df98c33,transparent 34rem),radial-gradient(circle at 92% 6%,#76c7ff22,transparent 30rem),linear-gradient(135deg,#06100b,#09150e 48%,#08110d);color:var(--text)}body{overflow-x:hidden}.shell{max-width:1440px;margin:auto;padding:22px;min-height:100dvh}.top{display:flex;align-items:center;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.cube{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#7ee07c 0 45%,#8f6b3d 46%);box-shadow:inset 0 0 0 2px #ffffff22,0 14px 40px #24d56b33}.brand h1{font-size:22px;line-height:1;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#0b1a12b5;color:var(--muted);font-weight:700;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:var(--soft)}.dot.ok{background:var(--green);box-shadow:0 0 18px var(--green)}.dot.warn{background:var(--amber);box-shadow:0 0 18px var(--amber)}.spacer{flex:1}.btn{border:0;border-radius:14px;padding:12px 16px;background:#1a2f22;color:var(--text);font-weight:800;cursor:pointer;transition:.18s transform,.18s background,.18s opacity;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px}.btn:hover{transform:translateY(-1px);background:#23452f}.btn:disabled{opacity:.48;cursor:not-allowed;transform:none}.btn.primary{background:linear-gradient(135deg,var(--green),#20bf63);color:#041107;box-shadow:0 18px 40px #22c96530}.btn.ghost{background:#ffffff0c;border:1px solid var(--line)}.btn.danger{background:#432020;color:#ffc9c9}.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(330px,.75fr);gap:22px}.panel{background:linear-gradient(180deg,#102018cc,#0a160fcc);border:1px solid #ffffff12;border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(18px);overflow:hidden}.hero{padding:28px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}.eyebrow{color:var(--green);font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase}.hero h2{font-size:clamp(30px,5vw,58px);line-height:.95;margin:8px 0 12px;letter-spacing:-.06em}.hero p{color:var(--muted);margin:0;max-width:680px;font-size:16px;line-height:1.55}.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 28px 28px}.metric{background:#ffffff0b;border:1px solid var(--line);border-radius:18px;padding:16px}.metric b{display:block;font-size:26px}.metric span{color:var(--muted);font-size:12px;font-weight:700}.section{padding:22px;border-top:1px solid #ffffff10}.section-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}.section h3{margin:0;font-size:18px}.section small{color:var(--muted)}.server-list{display:grid;gap:12px}.server{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;background:#ffffff0b;border:1px solid var(--line);border-radius:20px;padding:16px}.server.online{border-color:#47de8077;background:#1cd86512}.server h4{margin:0 0 6px;font-size:17px}.meta{display:flex;gap:8px;flex-wrap:wrap}.tag{border:1px solid var(--line);background:#07120c99;color:var(--muted);border-radius:999px;padding:5px 9px;font-size:12px;font-weight:750}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.stack{display:grid;gap:22px}.tunnel{padding:20px}.address{margin:14px 0;padding:14px;border-radius:16px;background:#052411;border:1px solid #36d87866;color:var(--green);font-weight:900;word-break:break-all}.hint{color:var(--muted);line-height:1.45;font-size:14px}.form{display:grid;gap:12px}.field label{display:block;margin-bottom:7px;color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}input,select{width:100%;border:1px solid var(--line);background:#06120c;color:var(--text);border-radius:14px;padding:13px 14px;outline:none;font:inherit}input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 4px #58f28a1a}.row{display:grid;grid-template-columns:1fr 120px;gap:10px}.console{height:320px;background:#030805;border:1px solid #193223;border-radius:18px;overflow:auto;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.7}.log.warn{color:var(--amber)}.log.error,.log.fatal{color:var(--red)}.log.info{color:#c8ffda}.cmd{display:flex;gap:10px;margin-top:10px}.cmd input{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.empty,.skeleton{border:1px dashed var(--line2);border-radius:20px;padding:22px;text-align:center;color:var(--muted);background:#ffffff08}.skeleton{min-height:110px;position:relative;overflow:hidden}.skeleton:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,#ffffff12,transparent);animation:shine 1.4s infinite}@keyframes shine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}.toast-wrap{position:fixed;right:18px;bottom:18px;display:grid;gap:10px;z-index:20}.toast{padding:13px 15px;border-radius:14px;background:#102018;border:1px solid var(--line);box-shadow:var(--shadow);font-weight:800}.toast.err{border-color:#ff6b6b66}.modal{position:fixed;inset:0;background:#0009;display:none;place-items:center;padding:20px;z-index:15}.modal.open{display:grid}.modal-card{width:min(560px,100%);background:#0d1a12;border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:var(--shadow)}.modal-card h3{margin:0 0 14px}@media(max-width:980px){.grid{grid-template-columns:1fr}.quick{grid-template-columns:repeat(2,1fr)}.hero{grid-template-columns:1fr}.top{flex-wrap:wrap}}@media(max-width:620px){.shell{padding:14px}.quick{grid-template-columns:1fr}.server{grid-template-columns:1fr}.actions{justify-content:stretch}.actions .btn{flex:1}.row{grid-template-columns:1fr}.top .spacer{display:none}.pill{width:100%;justify-content:center}.cmd{display:grid}.hero,.section{padding:18px}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07130d">
+  <title>MineBolso 2.0</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07130d;
+      --panel: #0d1b13cc;
+      --panel-2: #13251a;
+      --line: #244132;
+      --line-strong: #35654b;
+      --text: #f3fff6;
+      --muted: #a7b9ad;
+      --soft: #6f8376;
+      --green: #58f28a;
+      --amber: #ffd166;
+      --red: #ff6b6b;
+      --blue: #76c7ff;
+      --shadow: 0 24px 80px #0008;
+      --radius: 24px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background:
+        radial-gradient(circle at 12% -10%, #2df98c33, transparent 34rem),
+        radial-gradient(circle at 92% 6%, #76c7ff22, transparent 30rem),
+        linear-gradient(135deg, #06100b, #09150e 48%, #08110d);
+      color: var(--text);
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { max-width: 1440px; margin: auto; padding: 22px; }
+    .top { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .cube { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #7ee07c 0 45%, #8f6b3d 46%); box-shadow: inset 0 0 0 2px #ffffff22, 0 14px 40px #24d56b33; }
+    h1, h2, h3, h4, p { margin-top: 0; }
+    h1 { margin-bottom: 4px; font-size: 22px; }
+    .brand p, .muted { color: var(--muted); }
+    .spacer { flex: 1; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: #0b1a12b5; color: var(--muted); font-weight: 750; font-size: 12px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--soft); }
+    .dot.ok { background: var(--green); box-shadow: 0 0 18px var(--green); }
+    .dot.warn { background: var(--amber); box-shadow: 0 0 18px var(--amber); }
+
+    .grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); gap: 22px; }
+    .panel { background: linear-gradient(180deg, #102018cc, #0a160fcc); border: 1px solid #ffffff12; border-radius: var(--radius); box-shadow: var(--shadow); backdrop-filter: blur(18px); overflow: hidden; }
+    .section { padding: 22px; border-top: 1px solid #ffffff10; }
+    .hero { padding: 30px; display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; }
+    .hero h2 { font-size: clamp(32px, 5vw, 60px); line-height: .95; letter-spacing: -.06em; margin-bottom: 14px; }
+    .eyebrow { color: var(--green); font-weight: 900; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+    .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 28px 28px; }
+    .metric { background: #ffffff0b; border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
+    .metric b { display: block; font-size: 26px; }
+    .metric span { color: var(--muted); font-size: 12px; font-weight: 750; }
+    .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .section-head h3 { margin-bottom: 4px; }
+
+    .btn { border: 0; border-radius: 14px; padding: 12px 16px; min-height: 44px; background: #1a2f22; color: var(--text); font-weight: 850; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: .18s transform, .18s background, .18s opacity; }
+    .btn:hover { transform: translateY(-1px); background: #23452f; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .btn.primary { background: linear-gradient(135deg, var(--green), #20bf63); color: #041107; box-shadow: 0 18px 40px #22c96530; }
+    .btn.ghost { background: #ffffff0c; border: 1px solid var(--line); }
+    .btn.danger { background: #432020; color: #ffc9c9; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .library-tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .dropzone { border: 1px dashed var(--line-strong); background: #ffffff08; border-radius: 20px; padding: 18px; color: var(--muted); margin-bottom: 16px; }
+    .dropzone.active { border-color: var(--green); color: var(--text); background: #58f28a12; }
+    .version-list, .server-list { display: grid; gap: 12px; }
+    .version, .server { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; background: #ffffff0b; border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+    .version.ok, .server.online { border-color: #47de8077; background: #1cd86512; }
+    .version.warning { border-color: #ffd16677; }
+    .version.broken { border-color: #ff6b6b77; background: #ff6b6b10; }
+    .title-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .title-row h4 { margin: 0; font-size: 17px; }
+    .badge { border: 1px solid var(--line); background: #07120c99; color: var(--muted); border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 750; }
+    .badge.ok { color: var(--green); border-color: #58f28a66; }
+    .badge.warning { color: var(--amber); border-color: #ffd16666; }
+    .badge.broken { color: #ffb0b0; border-color: #ff6b6b66; }
+    .message { color: var(--muted); line-height: 1.45; font-size: 14px; margin-bottom: 0; }
+
+    .stack { display: grid; gap: 22px; align-content: start; }
+    .address { margin: 14px 0; padding: 14px; border-radius: 16px; background: #052411; border: 1px solid #36d87866; color: var(--green); font-weight: 900; word-break: break-all; }
+    .console { height: 320px; background: #030805; border: 1px solid #193223; border-radius: 18px; overflow: auto; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.7; }
+    .log.warn { color: var(--amber); }
+    .log.error, .log.fatal { color: var(--red); }
+    .log.info { color: #c8ffda; }
+    .cmd { display: flex; gap: 10px; margin-top: 10px; }
+    input { width: 100%; border: 1px solid var(--line); background: #06120c; color: var(--text); border-radius: 14px; padding: 13px 14px; outline: none; }
+    input:focus { border-color: var(--green); box-shadow: 0 0 0 4px #58f28a1a; }
+    .empty { border: 1px dashed var(--line-strong); border-radius: 20px; padding: 22px; text-align: center; color: var(--muted); background: #ffffff08; }
+    .toast-wrap { position: fixed; right: 18px; bottom: 18px; display: grid; gap: 10px; z-index: 20; }
+    .toast { padding: 13px 15px; border-radius: 14px; background: #102018; border: 1px solid var(--line); box-shadow: var(--shadow); font-weight: 800; }
+    .toast.err { border-color: #ff6b6b66; }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .quick, .library-tools { grid-template-columns: repeat(2, 1fr); }
+      .hero { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .shell { padding: 14px; }
+      .quick, .library-tools { grid-template-columns: 1fr; }
+      .version, .server { grid-template-columns: 1fr; }
+      .actions { justify-content: stretch; }
+      .actions .btn { flex: 1; }
+      .cmd { display: grid; }
+    }
+  </style>
 </head>
 <body>
-<div class="shell">
-  <header class="top">
-    <div class="brand"><div class="cube" aria-hidden="true"></div><div><h1>MineBolso <span style="color:var(--green)">2.0</span></h1><p>Minecraft Java com amigos, sem dor de cabeça.</p></div></div>
-    <div class="spacer"></div><div class="pill"><span id="wsDot" class="dot warn"></span><span id="wsText">conectando</span></div><button class="btn ghost" id="refreshBtn">Atualizar</button>
-  </header>
-  <main class="grid">
-    <section class="panel">
-      <div class="hero"><div><div class="eyebrow">fluxo guiado</div><h2>Escolha, crie, compartilhe e jogue.</h2><p>O MineBolso cuida do servidor local, console, saúde do processo e túnel playit para você focar no jogo.</p></div><button class="btn primary" id="openCreate">+ Criar servidor</button></div>
-      <div class="quick"><div class="metric"><b id="mServers">—</b><span>servidores</span></div><div class="metric"><b id="mOnline">—</b><span>online</span></div><div class="metric"><b id="mPlayers">—</b><span>jogadores</span></div><div class="metric"><b id="mRam">—</b><span>RAM do sistema</span></div></div>
-      <div class="section"><div class="section-head"><div><h3>Servidores</h3><small>Controles principais em um só lugar.</small></div><div class="spacer"></div></div><div id="servers" class="server-list"><div class="skeleton"></div></div></div>
-      <div class="section"><div class="section-head"><div><h3>Console seguro</h3><small id="consoleHint">Selecione um servidor para acompanhar logs.</small></div></div><div id="console" class="console" aria-live="polite"></div><div class="cmd"><input id="cmdInput" placeholder="say Olá, mundo" disabled><button class="btn" id="sendCmd" disabled>Enviar</button></div></div>
-    </section>
-    <aside class="stack">
-      <section class="panel tunnel"><div class="section-head"><div><h3>Túnel playit</h3><small id="tunStatus">verificando...</small></div></div><div id="tunAddress" class="address">Sem endereço público ainda.</div><div class="actions"><button class="btn primary" id="copyAddress">Copiar</button><button class="btn ghost" id="restartTunnel">Reconectar</button></div><p class="hint" id="tunHint">Quando o túnel ficar online, copie o endereço e envie aos amigos.</p></section>
-      <section class="panel section"><div class="section-head"><div><h3>Configuração rápida</h3><small>Somente o essencial.</small></div></div><div class="form"><div class="field"><label>Java</label><input id="cfgJava" value="java"></div><div class="row"><div class="field"><label>Pasta de versões</label><input id="cfgVersions"></div><div class="field"><label>Porta UI</label><input id="cfgPort" type="number"></div></div><button class="btn primary" id="saveCfg">Salvar</button></div></section>
-      <section class="panel section"><div class="section-head"><div><h3>Diagnóstico</h3><small>Erros com contexto aparecem aqui.</small></div></div><div id="alerts" class="server-list"><div class="empty">Nenhum alerta.</div></div></section>
-    </aside>
-  </main>
-</div>
-<div class="modal" id="createModal"><div class="modal-card"><h3>Novo servidor</h3><div class="form"><div class="field"><label>Versão / ID</label><input id="newId" placeholder="1.21.4"></div><div class="field"><label>Nome amigável</label><input id="newName" placeholder="Mundo dos amigos"></div><div class="row"><div class="field"><label>Link direto do server.jar</label><input id="newJar" placeholder="https://.../server.jar"></div><div class="field"><label>RAM (GB)</label><input id="newRam" type="number" step="0.5" value="1"></div></div><p class="hint">Se você já colocou o <b>server.jar</b> na pasta da versão, o link pode ficar vazio.</p><div class="actions"><button class="btn ghost" id="closeCreate">Cancelar</button><button class="btn primary" id="createBtn">Criar</button></div></div></div></div>
-<div class="toast-wrap" id="toasts"></div>
-<script>
-const $=id=>document.getElementById(id);const S={servers:[],system:null,tunnel:null,selected:null,ws:null,alerts:[]};
-const api=async(path,opt={})=>{const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opt});const j=await r.json().catch(()=>({ok:false,error:{message:'Resposta inválida'}}));if(!r.ok||!j.ok)throw new Error(j.error?.message||j.error||'Falha inesperada');return j};
-const post=(p,b)=>api(p,{method:'POST',body:b?JSON.stringify(b):undefined});const patch=(p,b)=>api(p,{method:'PATCH',body:JSON.stringify(b)});
-function esc(v){return String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}function bytes(b){if(!b)return'0 B';const u=['B','KB','MB','GB','TB'];let i=0;while(b>=1024&&i<u.length-1){b/=1024;i++}return `${b.toFixed(i?1:0)} ${u[i]}`}function toast(m,err=false){const t=document.createElement('div');t.className='toast '+(err?'err':'');t.textContent=m;$('toasts').append(t);setTimeout(()=>t.remove(),3400)}
-async function refresh(){try{const [srv,sys,tun,cfg]=await Promise.all([api('/api/servers'),api('/api/system').catch(()=>({system:null})),api('/api/tunnel').catch(()=>({})),api('/api/config')]);S.servers=srv.servers||[];S.system=sys.system;S.tunnel=tun;$('cfgJava').value=cfg.config.javaPath||'java';$('cfgVersions').value=cfg.config.versionsDir||'';$('cfgPort').value=cfg.config.port||25580;render()}catch(e){toast(e.message,true)}}
-function render(){const online=S.servers.filter(s=>s.running).length;$('mServers').textContent=S.servers.length;$('mOnline').textContent=online;$('mPlayers').textContent=S.servers.reduce((n,s)=>n+(s.players?.length||0),0);$('mRam').textContent=S.system?.ram?`${Math.round(S.system.ram.used/S.system.ram.total*100)}%`:'—';renderServers();renderTunnel();renderAlerts();}
-function renderServers(){const box=$('servers');if(!S.servers.length){box.innerHTML='<div class="empty"><b>Nenhum server.jar encontrado.</b><br>Crie um servidor para começar.</div>';return}box.innerHTML=S.servers.map(s=>`<article class="server ${s.running?'online':''}"><div><h4>${esc(s.name)}</h4><div class="meta"><span class="tag">${esc(s.id)}</span><span class="tag">${s.running?s.ready?'online':'iniciando':'offline'}</span><span class="tag">${s.ram}GB RAM</span><span class="tag">${s.players?.length||0} players</span><span class="tag">${s.tps?Number(s.tps.tps1m).toFixed(1)+' TPS':'TPS —'}</span></div></div><div class="actions"><button class="btn ghost" onclick="selectServer('${esc(s.id)}')">Console</button>${s.running?`<button class="btn" onclick="act('${esc(s.id)}','restart')">Reiniciar</button><button class="btn danger" onclick="act('${esc(s.id)}','stop')">Parar</button>`:`<button class="btn primary" onclick="act('${esc(s.id)}','start')">Iniciar</button>`}</div></article>`).join('')}
-function renderTunnel(){const t=S.tunnel||{};$('tunStatus').textContent=t.status||'offline';$('tunAddress').textContent=t.address||t.claimUrl||'Sem endereço público ainda.';$('tunHint').textContent=t.address?'Compartilhe este endereço com seus amigos no Minecraft Java.':t.claimUrl?'Abra o link acima para vincular o agente playit.':'Clique em Reconectar para iniciar o túnel automático.'}
-function renderAlerts(){const box=$('alerts');box.innerHTML=S.alerts.length?S.alerts.slice(0,5).map(a=>`<div class="server"><div><h4>${esc(a.alertType||a.type)}</h4><div class="hint">${esc(a.message)}</div></div></div>`).join(''):'<div class="empty">Nenhum alerta.</div>'}
-window.selectServer=id=>{S.selected=id;$('consoleHint').textContent=`Console de ${id}`;$('cmdInput').disabled=false;$('sendCmd').disabled=false;$('console').innerHTML='';if(S.ws?.readyState===1)S.ws.send(JSON.stringify({type:'subscribe',serverId:id}))};
-window.act=async(id,action)=>{try{await post(`/api/servers/${id}/${action}`);toast('Ação enviada.');setTimeout(refresh,500)}catch(e){toast(e.message,true)}};
-async function sendCommand(){if(!S.selected)return;const cmd=$('cmdInput').value.trim();if(!cmd)return;try{await post(`/api/servers/${S.selected}/command`,{cmd});$('cmdInput').value=''}catch(e){toast(e.message,true)}}
-function connectWS(){const proto=location.protocol==='https:'?'wss':'ws';const ws=new WebSocket(`${proto}://${location.host}/terminal`);S.ws=ws;ws.onopen=()=>{$('wsDot').className='dot ok';$('wsText').textContent='tempo real ativo';if(S.selected)ws.send(JSON.stringify({type:'subscribe',serverId:S.selected}))};ws.onclose=()=>{$('wsDot').className='dot warn';$('wsText').textContent='reconectando';setTimeout(connectWS,1800)};ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='log')addLog(m);if(m.type==='status')refresh();if(m.type==='alert'){S.alerts.unshift({...m,ts:Date.now()});renderAlerts()}if(m.type==='tunnel'){S.tunnel=m;renderTunnel()}}}
-function addLog(m){if(m.serverId!==S.selected)return;const el=document.createElement('div');el.className='log '+String(m.level||'').toLowerCase();el.textContent=m.line;$('console').append(el);$('console').scrollTop=$('console').scrollHeight}
-$('refreshBtn').onclick=refresh;$('sendCmd').onclick=sendCommand;$('cmdInput').onkeydown=e=>{if(e.key==='Enter')sendCommand()};$('openCreate').onclick=()=>$('createModal').classList.add('open');$('closeCreate').onclick=()=>$('createModal').classList.remove('open');$('createModal').onclick=e=>{if(e.target.id==='createModal')e.currentTarget.classList.remove('open')};$('createBtn').onclick=async()=>{try{await post('/api/servers',{id:$('newId').value,name:$('newName').value,jarUrl:$('newJar').value,ram:$('newRam').value});$('createModal').classList.remove('open');toast('Servidor criado.');refresh()}catch(e){toast(e.message,true)}};$('saveCfg').onclick=async()=>{try{await patch('/api/config',{javaPath:$('cfgJava').value,versionsDir:$('cfgVersions').value,port:$('cfgPort').value});toast('Configuração salva. Reinicie o app para aplicar porta/pastas.')}catch(e){toast(e.message,true)}};$('restartTunnel').onclick=async()=>{try{await post('/api/tunnel/restart');toast('Reconectando túnel.');setTimeout(refresh,900)}catch(e){toast(e.message,true)}};$('copyAddress').onclick=()=>{const v=S.tunnel?.address||S.tunnel?.claimUrl;if(!v)return toast('Nenhum endereço para copiar.',true);navigator.clipboard?.writeText(v);toast('Copiado!')};
-connectWS();refresh();setInterval(refresh,15000);
-</script>
+  <div class="shell">
+    <header class="top">
+      <div class="brand">
+        <div class="cube" aria-hidden="true"></div>
+        <div>
+          <h1>MineBolso <span style="color:var(--green)">2.0</span></h1>
+          <p class="muted">Servidor Minecraft Java plug-and-play pela pasta local .minecraft.</p>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="pill"><span id="wsDot" class="dot warn"></span><span id="wsText">conectando</span></div>
+      <button class="btn ghost" id="refreshBtn">Atualizar</button>
+    </header>
+
+    <main class="grid">
+      <section class="panel">
+        <div class="hero">
+          <div>
+            <div class="eyebrow">novo fluxo simples</div>
+            <h2>Copie para .minecraft, selecione e jogue.</h2>
+            <p class="muted">Forge, NeoForge, Fabric, Quilt, Vanilla e modpacks exportados são detectados automaticamente em <strong>.minecraft/versions</strong>.</p>
+          </div>
+          <button class="btn primary" id="openVersionsBtn">Abrir pasta .minecraft/versions</button>
+        </div>
+
+        <div class="quick">
+          <div class="metric"><b id="mVersions">—</b><span>versões detectadas</span></div>
+          <div class="metric"><b id="mReady">—</b><span>prontas</span></div>
+          <div class="metric"><b id="mOnline">—</b><span>online</span></div>
+          <div class="metric"><b id="mPlayers">—</b><span>jogadores</span></div>
+        </div>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <h3>Biblioteca de Versões</h3>
+              <p class="muted">Tudo dentro de .minecraft/versions aparece aqui com validação amigável.</p>
+            </div>
+          </div>
+          <div class="library-tools">
+            <button class="btn primary" id="rescanBtn">Reescanear</button>
+            <button class="btn ghost" id="openMinecraftBtn">Abrir .minecraft</button>
+            <button class="btn ghost" id="importBtn">Importar do Launcher</button>
+            <button class="btn ghost" id="openVersionsBtn2">Abrir versions</button>
+          </div>
+          <div class="dropzone" id="dropzone">
+            Arraste uma pasta/exportação para lembrar o fluxo: coloque a instalação em <strong>.minecraft/versions</strong>. Para importar automaticamente, use “Importar do Launcher”.
+          </div>
+          <div id="versions" class="version-list"><div class="empty">Carregando biblioteca...</div></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <h3>Servidores</h3>
+              <p class="muted">Inicie apenas versões válidas. As incompletas mostram orientação antes de quebrar.</p>
+            </div>
+          </div>
+          <div id="servers" class="server-list"><div class="empty">Nenhum servidor carregado.</div></div>
+        </section>
+      </section>
+
+      <aside class="stack">
+        <section class="panel section">
+          <div class="section-head"><div><h3>Túnel playit</h3><p class="muted" id="tunStatus">verificando...</p></div></div>
+          <div id="tunAddress" class="address">Sem endereço público ainda.</div>
+          <div class="actions">
+            <button class="btn primary" id="copyAddress">Copiar</button>
+            <button class="btn ghost" id="restartTunnel">Reconectar</button>
+          </div>
+          <p class="muted" id="tunHint">Quando o túnel ficar online, copie o endereço e envie aos amigos.</p>
+        </section>
+
+        <section class="panel section">
+          <div class="section-head"><div><h3>Console seguro</h3><p class="muted" id="consoleHint">Selecione uma versão em execução.</p></div></div>
+          <div id="console" class="console" aria-live="polite"></div>
+          <div class="cmd">
+            <input id="cmdInput" placeholder="say Olá, mundo" disabled>
+            <button class="btn" id="sendCmd" disabled>Enviar</button>
+          </div>
+        </section>
+
+        <section class="panel section">
+          <div class="section-head"><div><h3>Diagnóstico</h3><p class="muted">Causa provável e próximos passos aparecem aqui.</p></div></div>
+          <div id="alerts" class="server-list"><div class="empty">Nenhum alerta.</div></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div class="toast-wrap" id="toasts"></div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const state = { versions: [], servers: [], library: null, tunnel: null, selected: null, alerts: [], ws: null };
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+      const json = await response.json().catch(() => ({ ok: false, error: { message: 'Resposta inválida do aplicativo.' } }));
+      if (!response.ok || !json.ok) throw new Error(json.error?.message || json.error || 'Falha inesperada.');
+      return json;
+    }
+
+    const post = (path, body) => api(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined });
+    const esc = value => String(value ?? '').replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+    const routeId = id => encodeURIComponent(id);
+
+    async function refresh(force = false) {
+      try {
+        const [versions, servers, tunnel] = await Promise.all([
+          api(`/api/versions${force ? '?force=1' : ''}`),
+          api('/api/servers'),
+          api('/api/tunnel').catch(() => ({})),
+        ]);
+        state.versions = versions.versions || [];
+        state.library = versions.library || null;
+        state.servers = servers.servers || [];
+        state.tunnel = tunnel;
+        render();
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+
+    function render() {
+      const online = state.servers.filter(server => server.running).length;
+      const players = state.servers.reduce((count, server) => count + (server.players?.length || 0), 0);
+      $('mVersions').textContent = state.library?.total ?? state.versions.length;
+      $('mReady').textContent = state.library?.ready ?? state.versions.filter(v => v.integrity?.status === 'ok').length;
+      $('mOnline').textContent = online;
+      $('mPlayers').textContent = players;
+      renderVersions();
+      renderServers();
+      renderTunnel();
+      renderAlerts();
+    }
+
+    function renderVersions() {
+      const box = $('versions');
+      if (!state.versions.length) {
+        box.innerHTML = '<div class="empty"><b>Nenhuma versão detectada.</b><br>Copie uma pasta para .minecraft/versions ou importe uma instalação existente.</div>';
+        return;
+      }
+
+      box.innerHTML = state.versions.map(version => {
+        const status = version.integrity?.status || 'broken';
+        const issues = [...(version.integrity?.issues || []), ...(version.integrity?.hints || [])].slice(0, 2).join(' ');
+        return `
+          <article class="version ${status}">
+            <div>
+              <div class="title-row">
+                <h4>${statusIcon(status)} ${esc(version.name)}</h4>
+                <span class="badge ${status}">${esc(version.integrity?.label || 'Indefinida')}</span>
+                <span class="badge">${esc(version.loader)}</span>
+                <span class="badge">MC ${esc(version.minecraftVersion)}</span>
+                <span class="badge">${version.modCount || 0} mods</span>
+              </div>
+              <p class="message">${esc(issues || version.integrity?.message || 'Versão analisada.')}</p>
+            </div>
+            <div class="actions">
+              <button class="btn ghost" data-select="${esc(version.id)}">Selecionar</button>
+              <button class="btn primary" data-start="${esc(version.id)}" ${version.available ? '' : 'disabled'}>Iniciar</button>
+            </div>
+          </article>`;
+      }).join('');
+    }
+
+    function renderServers() {
+      const box = $('servers');
+      if (!state.servers.length) {
+        box.innerHTML = '<div class="empty">Nenhum servidor disponível. A biblioteca acima mostrará o que precisa ser corrigido.</div>';
+        return;
+      }
+
+      box.innerHTML = state.servers.map(server => `
+        <article class="server ${server.running ? 'online' : ''}">
+          <div>
+            <div class="title-row">
+              <h4>${esc(server.name)}</h4>
+              <span class="badge ${server.running ? 'ok' : ''}">${server.running ? (server.ready ? 'online' : 'iniciando') : 'offline'}</span>
+              <span class="badge">${esc(server.loader || server.type)}</span>
+              <span class="badge">${server.ram}GB RAM</span>
+              <span class="badge">${server.players?.length || 0} jogadores</span>
+            </div>
+            <p class="message">${esc(server.integrity?.message || 'Pronto para usar.')}</p>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" data-select="${esc(server.id)}">Console</button>
+            ${server.running
+              ? `<button class="btn" data-restart="${esc(server.id)}">Reiniciar</button><button class="btn danger" data-stop="${esc(server.id)}">Parar</button>`
+              : `<button class="btn primary" data-start="${esc(server.id)}" ${server.available ? '' : 'disabled'}>Iniciar</button>`}
+          </div>
+        </article>`).join('');
+    }
+
+    function renderTunnel() {
+      const tunnel = state.tunnel || {};
+      $('tunStatus').textContent = tunnel.status || 'offline';
+      $('tunAddress').textContent = tunnel.address || tunnel.claimUrl || 'Sem endereço público ainda.';
+      $('tunHint').textContent = tunnel.address
+        ? 'Compartilhe este endereço com seus amigos no Minecraft Java.'
+        : tunnel.claimUrl
+          ? 'Abra o link acima para vincular o agente playit.'
+          : 'Clique em Reconectar para iniciar o túnel automático.';
+    }
+
+    function renderAlerts() {
+      $('alerts').innerHTML = state.alerts.length
+        ? state.alerts.slice(0, 5).map(alert => `<div class="server"><div><h4>${esc(alert.alertType || alert.type)}</h4><p class="message">${esc(alert.message)}</p></div></div>`).join('')
+        : '<div class="empty">Nenhum alerta.</div>';
+    }
+
+    function statusIcon(status) {
+      return status === 'ok' ? '✓' : status === 'warning' ? '⚠' : '✕';
+    }
+
+    function selectServer(id) {
+      state.selected = id;
+      $('consoleHint').textContent = `Console de ${id}`;
+      $('cmdInput').disabled = false;
+      $('sendCmd').disabled = false;
+      $('console').innerHTML = '';
+      if (state.ws?.readyState === WebSocket.OPEN) state.ws.send(JSON.stringify({ type: 'subscribe', serverId: id }));
+    }
+
+    async function serverAction(id, action) {
+      try {
+        await post(`/api/servers/${routeId(id)}/${action}`);
+        toast('Ação enviada.');
+        setTimeout(() => refresh(true), 500);
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+
+    async function sendCommand() {
+      const command = $('cmdInput').value.trim();
+      if (!state.selected || !command) return;
+      try {
+        await post(`/api/servers/${routeId(state.selected)}/command`, { cmd: command });
+        $('cmdInput').value = '';
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${location.host}/terminal`);
+      state.ws = ws;
+      ws.onopen = () => {
+        $('wsDot').className = 'dot ok';
+        $('wsText').textContent = 'tempo real ativo';
+        if (state.selected) ws.send(JSON.stringify({ type: 'subscribe', serverId: state.selected }));
+      };
+      ws.onclose = () => {
+        $('wsDot').className = 'dot warn';
+        $('wsText').textContent = 'reconectando';
+        setTimeout(connectWS, 1800);
+      };
+      ws.onmessage = event => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'log') addLog(message);
+        if (message.type === 'status' || message.type === 'library') refresh(true);
+        if (message.type === 'alert') { state.alerts.unshift({ ...message, ts: Date.now() }); renderAlerts(); }
+        if (message.type === 'tunnel') { state.tunnel = message; renderTunnel(); }
+      };
+    }
+
+    function addLog(message) {
+      if (message.serverId !== state.selected) return;
+      const line = document.createElement('div');
+      line.className = `log ${String(message.level || '').toLowerCase()}`;
+      line.textContent = message.line;
+      $('console').append(line);
+      $('console').scrollTop = $('console').scrollHeight;
+    }
+
+    function toast(message, isError = false) {
+      const item = document.createElement('div');
+      item.className = `toast ${isError ? 'err' : ''}`;
+      item.textContent = message;
+      $('toasts').append(item);
+      setTimeout(() => item.remove(), 3600);
+    }
+
+    document.addEventListener('click', event => {
+      const target = event.target;
+      const id = target.dataset?.select || target.dataset?.start || target.dataset?.stop || target.dataset?.restart;
+      if (target.dataset?.select) selectServer(id);
+      if (target.dataset?.start) serverAction(id, 'start');
+      if (target.dataset?.stop) serverAction(id, 'stop');
+      if (target.dataset?.restart) serverAction(id, 'restart');
+    });
+
+    $('refreshBtn').onclick = () => refresh(true);
+    $('rescanBtn').onclick = async () => { await post('/api/versions/rescan'); toast('Biblioteca reescaneada.'); refresh(true); };
+    $('openMinecraftBtn').onclick = () => post('/api/minecraft/open', { target: 'base' }).catch(error => toast(error.message, true));
+    $('openVersionsBtn').onclick = $('openVersionsBtn2').onclick = () => post('/api/minecraft/open', { target: 'versions' }).catch(error => toast(error.message, true));
+    $('importBtn').onclick = async () => {
+      const sourcePath = prompt('Cole o caminho da instalação existente (.minecraft, Prism, MultiMC, CurseForge ou Modrinth):');
+      if (!sourcePath) return;
+      try {
+        const result = await post('/api/versions/import', { sourcePath });
+        toast(`${result.import.imported.length} instalação(ões) importada(s).`);
+        refresh(true);
+      } catch (error) { toast(error.message, true); }
+    };
+    $('restartTunnel').onclick = () => post('/api/tunnel/restart').then(() => toast('Reconectando túnel.')).catch(error => toast(error.message, true));
+    $('copyAddress').onclick = () => {
+      const value = state.tunnel?.address || state.tunnel?.claimUrl;
+      if (!value) return toast('Nenhum endereço para copiar.', true);
+      navigator.clipboard?.writeText(value);
+      toast('Copiado!');
+    };
+    $('sendCmd').onclick = sendCommand;
+    $('cmdInput').onkeydown = event => { if (event.key === 'Enter') sendCommand(); };
+
+    const dropzone = $('dropzone');
+    ['dragenter', 'dragover'].forEach(name => dropzone.addEventListener(name, event => { event.preventDefault(); dropzone.classList.add('active'); }));
+    ['dragleave', 'drop'].forEach(name => dropzone.addEventListener(name, event => { event.preventDefault(); dropzone.classList.remove('active'); }));
+    dropzone.addEventListener('drop', () => toast('Por segurança do navegador, use Abrir Pasta ou Importar do Launcher para copiar automaticamente.'));
+
+    connectWS();
+    refresh(true);
+    setInterval(refresh, 15_000);
+  </script>
 </body>
 </html>

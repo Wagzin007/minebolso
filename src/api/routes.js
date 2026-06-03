@@ -5,9 +5,17 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const https = require('https');
+        codex/revise-project-architecture-for-version-2.0-z7j7v2
+const { spawn } = require('child_process');
 const router = express.Router();
 
 const manager = require('../server/ServerManager');
+const scanner = require('../server/ServerScanner');
+
+const router = express.Router();
+
+const manager = require('../server/ServerManager');
+        main
 const playit = require('../tunnel/PlayitManager');
 const { readConfig, writeConfig } = require('../config');
 const { log, userError, errorPayload } = require('../utils/diagnostics');
@@ -34,6 +42,68 @@ function fail(res, error, req) {
   if (status >= 500) log('error', 'Falha em rota API', { method: req.method, url: req.originalUrl, error });
   res.status(status).json({ ok: false, error: errorPayload(error) });
 }
+        codex/revise-project-architecture-for-version-2.0-z7j7v2
+
+function ensureServerExists(id) {
+  const server = manager.getStatus(assertServerId(id));
+  if (!server) {
+    throw userError('Servidor não encontrado.', {
+      statusCode: 404,
+      code: 'SERVER_NOT_FOUND',
+      suggestion: 'Crie um servidor ou confira se a pasta contém um server.jar.',
+    });
+  }
+  return server;
+}
+
+router.get('/health', (req, res) => ok(res, { status: 'ready', uptime: process.uptime() }));
+
+
+// VERSION LIBRARY
+router.get('/versions', asyncRoute((req, res) => ok(res, {
+  library: scanner.getLibraryStatus(),
+  versions: scanner.scanVersions({ force: req.query.force === '1' }),
+})));
+
+router.post('/versions/rescan', asyncRoute((req, res) => ok(res, {
+  library: scanner.getLibraryStatus(),
+  versions: scanner.scanVersions({ force: true }),
+})));
+
+router.post('/versions/import', json, asyncRoute((req, res) => {
+  const result = scanner.importInstallation(req.body?.sourcePath, { limit: Number(req.body?.limit) || 40 });
+  ok(res, { import: result, library: scanner.getLibraryStatus(), versions: scanner.scanVersions({ force: true }) });
+}));
+
+router.post('/minecraft/open', asyncRoute((req, res) => {
+  const cfg = readConfig();
+  openFolder(req.body?.target === 'versions' ? cfg.versionsDir : cfg.baseDir);
+  ok(res, { opened: true, path: req.body?.target === 'versions' ? cfg.versionsDir : cfg.baseDir });
+}));
+
+// SERVERS
+router.get('/servers', asyncRoute((req, res) => ok(res, { servers: manager.listAll() })));
+
+router.post('/servers', json, asyncRoute(async (req, res) => {
+  const cfg = readConfig();
+  const id = assertServerId(req.body?.id || req.body?.version);
+  const name = sanitizeName(req.body?.name, id);
+  const ram = normalizeRam(req.body?.ram, cfg.defaultRam || 1);
+  const jarUrl = req.body?.jarUrl ? assertJarUrl(req.body.jarUrl) : null;
+  const serverDir = safePath(cfg.versionsDir, id);
+  const jarPath = path.join(serverDir, 'server.jar');
+
+  if (!fs.existsSync(serverDir)) fs.mkdirSync(serverDir, { recursive: true });
+  if (jarUrl && !fs.existsSync(jarPath)) await downloadFile(jarUrl, jarPath, 140 * 1024 * 1024);
+  if (!fs.existsSync(jarPath)) {
+    throw userError('server.jar não encontrado para esta versão.', {
+      statusCode: 409,
+      code: 'JAR_REQUIRED',
+      suggestion: `Coloque o arquivo em ${jarPath} ou informe um link direto no campo jarUrl.`,
+    });
+  }
+
+
 
 function ensureServerExists(id) {
   const server = manager.getStatus(assertServerId(id));
@@ -71,6 +141,7 @@ router.post('/servers', json, asyncRoute(async (req, res) => {
     });
   }
 
+        main
   manager.updateServerConfig(id, { name, ram, autoRestart: true, lastCreated: new Date().toISOString() });
   ok(res, { server: manager.getStatus(id) });
 }));
@@ -163,8 +234,11 @@ router.patch('/config', json, asyncRoute((req, res) => {
   const body = req.body || {};
   const updates = {};
   if ('javaPath' in body) updates.javaPath = String(body.javaPath || 'java').trim() || 'java';
+        codex/revise-project-architecture-for-version-2.0-z7j7v2
+
   if ('baseDir' in body) updates.baseDir = String(body.baseDir || '').trim();
   if ('versionsDir' in body) updates.versionsDir = String(body.versionsDir || '').trim();
+        main
   if ('port' in body) updates.port = Math.min(65535, Math.max(1024, Number.parseInt(body.port, 10) || 25580));
   if ('defaultRam' in body) updates.defaultRam = normalizeRam(body.defaultRam);
   if ('autoTunnel' in body) updates.autoTunnel = Boolean(body.autoTunnel);
@@ -222,6 +296,17 @@ function downloadFile(url, destPath, maxBytes) {
     request.setTimeout(45_000, () => request.destroy(userError('Tempo limite ao baixar o jar.', { statusCode: 504, code: 'JAR_DOWNLOAD_TIMEOUT' })));
   });
 }
+        codex/revise-project-architecture-for-version-2.0-z7j7v2
+
+function openFolder(folderPath) {
+  const platform = process.platform;
+  const cmd = platform === 'win32' ? 'explorer.exe' : platform === 'darwin' ? 'open' : 'xdg-open';
+  const child = spawn(cmd, [folderPath], { detached: true, stdio: 'ignore' });
+  child.on('error', error => log('warn', 'Não foi possível abrir pasta automaticamente', { folderPath, error }));
+  child.unref();
+}
+
+        main
 
 function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 

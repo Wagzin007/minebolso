@@ -52,6 +52,17 @@ class TerminalSocket {
         message:   payload.message,
       });
     });
+
+    this.manager.on('library', payload => {
+      this._broadcastAll({ type: 'library', ...payload });
+    });
+  }
+
+  _setupTunnelEvents() {
+    if (!this.tunnel) return;
+    this.tunnel.on('status', status => this._broadcastAll({ type: 'tunnel', ...status }));
+    this.tunnel.on('address', ({ address }) => this._broadcastAll({ type: 'tunnel_address', address }));
+    this.tunnel.on('claim', ({ url }) => this._broadcastAll({ type: 'tunnel_claim', url }));
   }
 
   _setupTunnelEvents() {

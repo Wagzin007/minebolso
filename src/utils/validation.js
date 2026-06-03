@@ -3,7 +3,7 @@
 const path = require('path');
 const { userError } = require('./diagnostics');
 
-const ID_RE = /^[a-zA-Z0-9._-]{1,64}$/;
+const ID_RE = /^[^/\\\x00-\x1F]{1,100}$/;
 const PLAYER_RE = /^[a-zA-Z0-9_]{1,16}$/;
 const TEXT_EXTS = new Set(['.properties', '.json', '.yml', '.yaml', '.txt', '.log', '.toml', '.cfg', '.conf']);
 
@@ -12,7 +12,7 @@ function assertServerId(id) {
     throw userError('Identificador de servidor inválido.', {
       statusCode: 400,
       code: 'INVALID_SERVER_ID',
-      suggestion: 'Use apenas letras, números, ponto, hífen ou underline.',
+      suggestion: 'Use o nome da pasta dentro de .minecraft/versions, sem barras ou caracteres de controle.',
     });
   }
   return String(id);

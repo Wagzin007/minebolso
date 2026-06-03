@@ -6,7 +6,12 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+        codex/revise-project-architecture-for-version-2.0-z7j7v2
+    "check": "npm run check:merge-artifacts && node --check src/index.js && node --check src/api/routes.js && node --check src/server/ServerManager.js && node --check src/server/ServerProcess.js && node --check src/server/ServerScanner.js && node --check src/tunnel/PlayitManager.js && node --check src/watchdog/Watchdog.js && node --check src/ws/TerminalSocket.js && node --check scripts/check-merge-artifacts.js",
+    "check:merge-artifacts": "node scripts/check-merge-artifacts.js"
+
     "check": "node --check src/index.js && node --check src/api/routes.js && node --check src/server/ServerManager.js && node --check src/server/ServerProcess.js && node --check src/server/ServerScanner.js && node --check src/tunnel/PlayitManager.js && node --check src/watchdog/Watchdog.js && node --check src/ws/TerminalSocket.js"
+        main
   },
   "keywords": [
     "minecraft",

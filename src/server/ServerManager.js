@@ -73,7 +73,15 @@ class ServerManager extends EventEmitter {
       throw userError(`Versão ${id} não encontrada.`, {
         statusCode: 404,
         code: 'SERVER_VERSION_NOT_FOUND',
-        suggestion: 'Crie o servidor pelo assistente ou coloque server.jar na pasta da versão.',
+        suggestion: 'Copie a pasta da versão para .minecraft/versions e clique em Reescanear.',
+      });
+    }
+    if (!meta.available) {
+      throw userError(meta.integrity?.message || 'Versão incompleta.', {
+        statusCode: 409,
+        code: 'VERSION_NOT_RUNNABLE',
+        details: meta.integrity?.issues || [],
+        suggestion: 'Copie novamente a instalação ou exporte a versão em modo servidor para .minecraft/versions.',
       });
     }
 
@@ -151,6 +159,11 @@ class ServerManager extends EventEmitter {
 
   getProcess(id) { return this._instances.get(id)?.proc || null; }
   getState(id) { return this._instances.get(id)?.state || null; }
+
+  invalidateScan() {
+    this._lastScanAt = 0;
+    this._lastScan = [];
+  }
 
   removeDeadInstance(id) {
     const inst = this._instances.get(id);
