@@ -65,6 +65,13 @@ class TerminalSocket {
     this.tunnel.on('claim', ({ url }) => this._broadcastAll({ type: 'tunnel_claim', url }));
   }
 
+  _setupTunnelEvents() {
+    if (!this.tunnel) return;
+    this.tunnel.on('status', status => this._broadcastAll({ type: 'tunnel', ...status }));
+    this.tunnel.on('address', ({ address }) => this._broadcastAll({ type: 'tunnel_address', address }));
+    this.tunnel.on('claim', ({ url }) => this._broadcastAll({ type: 'tunnel_claim', url }));
+  }
+
   // ── Gerencia conexões WebSocket ────────────────────────────────
   _setupWSS() {
     this.wss.on('connection', (ws, req) => {

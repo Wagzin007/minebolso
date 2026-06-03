@@ -22,6 +22,7 @@ const CONFIG_FILE = path.join(DATA_DIR, 'minebolso.config.json');
 const SERVERS_FILE = path.join(DATA_DIR, 'servers.json');
 
 const DEFAULTS = {
+        codex/revise-project-architecture-for-version-2.0-z7j7v2
   port: 25580,
   defaultRam: 1,
   javaPath: 'java',
@@ -33,6 +34,15 @@ const DEFAULTS = {
   runtimeDir: RUNTIME_DIR,
   autoTunnel: true,
   playitBin: IS_TERMUX
+
+  port:          25580,
+  defaultRam:    1,
+  javaPath:      'java',          // espera estar no PATH
+  baseDir:       BASE_DIR,
+  versionsDir:   VERSIONS_DIR,
+  autoTunnel:    true,
+  playitBin:     IS_TERMUX
+        main
     ? path.join(HOME_DIR, '.local', 'bin', 'playit')
     : path.join(PROJECT_ROOT, '.minecraft', 'runtime', 'playit'),
   scanner: {
@@ -46,8 +56,13 @@ const DEFAULTS = {
     tpsAlertCycles: 3,
     ramThreshold: 90,
     checkIntervalMs: 10_000,
+        codex/revise-project-architecture-for-version-2.0-z7j7v2
     crashWindowMs: 60_000,
     maxRestarts: 3,
+
+    crashWindowMs:   60_000,
+    maxRestarts:     3,
+        main
   },
 };
 
@@ -76,7 +91,11 @@ function readConfig() {
 function writeConfig(updates) {
   ensureDirs();
   const current = readConfig();
+        codex/revise-project-architecture-for-version-2.0-z7j7v2
   const next = migrateConfig(deepMerge(current, updates || {}));
+
+  const next    = deepMerge(current, updates || {});
+        main
   atomicWriteJson(CONFIG_FILE, next);
   return next;
 }
